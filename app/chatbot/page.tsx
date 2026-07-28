@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { Suspense, useEffect, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { describeError } from '@/lib/errors'
 import { n8nClient } from '@/lib/n8n/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,7 @@ interface Message {
   created_at: string
 }
 
-export default function ChatbotPage() {
+function ChatbotPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const companyId = searchParams.get('company_id')
@@ -109,7 +110,7 @@ export default function ChatbotPage() {
         if (messagesError) throw messagesError
         setMessages(messagesData || [])
       } catch (err) {
-        console.error('Error initializing chat:', err)
+        console.error('Error initializing chat:', describeError(err))
         setError('Failed to initialize chat')
       } finally {
         setLoading(false)
@@ -201,7 +202,7 @@ export default function ChatbotPage() {
         },
       ])
     } catch (err: any) {
-      console.error('Error sending message:', err)
+      console.error('Error sending message:', describeError(err))
       setError(err.message || 'Failed to send message')
     } finally {
       setSending(false)
@@ -315,5 +316,19 @@ export default function ChatbotPage() {
         </div>
       </footer>
     </div>
+  )
+}
+
+export default function ChatbotPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-background">
+          <p className="text-foreground">Loading chat...</p>
+        </div>
+      }
+    >
+      <ChatbotPageContent />
+    </Suspense>
   )
 }

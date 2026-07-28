@@ -45,7 +45,7 @@ More details in **[QUICKSTART.md](./QUICKSTART.md)**
 - ✅ Secure session management
 - ✅ Row-level security (RLS) on all data
 - ✅ Multi-tenant isolation
-- ✅ Protected routes with middleware
+- ✅ Protected routes with proxy
 
 ### Company Management
 - ✅ Create and manage companies
@@ -157,7 +157,7 @@ components/
 scripts/
 └── schema.sql                        # Database setup
 
-middleware.ts                         # Auth middleware
+proxy.ts                         # Auth proxy (Next 16 middleware)
 ```
 
 ---

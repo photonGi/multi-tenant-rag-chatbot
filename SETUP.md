@@ -95,7 +95,7 @@ lib/
 scripts/
 └── schema.sql                       # Database schema setup
 
-middleware.ts                        # Auth middleware
+proxy.ts                        # Auth proxy (Next 16 middleware)
 tailwind.config.ts                   # Tailwind config
 ```
 

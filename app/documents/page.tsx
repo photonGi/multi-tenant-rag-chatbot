@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { describeError } from '@/lib/errors'
 import { n8nClient } from '@/lib/n8n/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,29 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Upload, Trash2, ArrowLeft, Loader } from 'lucide-react'
 
-export default function DocumentsPage() {
+/**
+ * Short excerpt shown in the documents list.
+ *
+ * Only text-like files are read here — calling .text() on a PDF or an image
+ * yields raw bytes, which is what used to get stored as the preview.
+ */
+async function buildPreview(file: File): Promise<string | null> {
+  const isTextual =
+    file.type.startsWith('text/') ||
+    file.type === 'application/json' ||
+    /\.(txt|md|csv|json)$/i.test(file.name)
+
+  if (!isTextual) return null
+
+  try {
+    const text = await file.text()
+    return text.slice(0, 200)
+  } catch {
+    return null
+  }
+}
+
+function DocumentsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const companyId = searchParams.get('company_id')
@@ -57,7 +80,7 @@ export default function DocumentsPage() {
         if (docsError) throw docsError
         setDocuments(docsData || [])
       } catch (err) {
-        console.error('Error fetching data:', err)
+        console.error('Error fetching data:', describeError(err))
         setError('Failed to load documents')
       } finally {
         setLoading(false)
@@ -87,35 +110,25 @@ export default function DocumentsPage() {
     setSuccess('')
 
     try {
-      // Read file content
-      const fileContent = await file.text()
-
-      // Send to n8n for processing
+      // Send the file itself to n8n, which extracts the text (PDFs go through
+      // its PDF node). Reading it here would only work for plain text.
       const result = await n8nClient.uploadDocument({
         api_key: company.api_key,
         source_name: file.name,
         label,
-        content: fileContent,
-        file_type: file.type || 'text/plain',
+        file,
       })
 
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed')
-      }
-
       // Add document to database
-      const { data: newDoc, error: insertError } = await supabase
-        .from('documents')
-        .insert([
-          {
-            company_id: companyId,
-            label,
-            source_name: file.name,
-            preview: fileContent.substring(0, 200),
-            chunk_count: result.chunk_count || 0,
-          },
-        ])
-        .select()
+      const { error: insertError } = await supabase.from('documents').insert([
+        {
+          company_id: companyId,
+          label,
+          source_name: file.name,
+          preview: await buildPreview(file),
+          chunk_count: result.chunks_created ?? 0,
+        },
+      ])
 
       if (insertError) throw insertError
 
@@ -137,7 +150,7 @@ export default function DocumentsPage() {
       setTimeout(() => setSuccess(''), 3000)
     } catch (err: any) {
       setError(err.message || 'Failed to upload document')
-      console.error('Upload error:', err)
+      console.error('Upload error:', describeError(err))
     } finally {
       setUploading(false)
     }
@@ -159,7 +172,7 @@ export default function DocumentsPage() {
       setSuccess('Document deleted successfully!')
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      console.error('Delete error:', err)
+      console.error('Delete error:', describeError(err))
       setError('Failed to delete document')
     }
   }
@@ -293,5 +306,19 @@ export default function DocumentsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function DocumentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-background">
+          <p className="text-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <DocumentsPageContent />
+    </Suspense>
   )
 }

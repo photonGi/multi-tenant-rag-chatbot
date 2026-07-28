@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { describeError } from '@/lib/errors'
+import { generateApiKey } from '@/lib/api-key'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Copy, RefreshCw, Trash2, AlertTriangle } from 'lucide-react'
 
-export default function AdminPage() {
+function AdminPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const companyId = searchParams.get('company_id')
@@ -83,7 +85,7 @@ export default function AdminPage() {
           totalMessages: msgsCount || 0,
         })
       } catch (err) {
-        console.error('Error fetching admin data:', err)
+        console.error('Error fetching admin data:', describeError(err))
         setError('Failed to load admin data')
       } finally {
         setLoading(false)
@@ -105,7 +107,7 @@ export default function AdminPage() {
     if (!confirm('Are you sure? This will invalidate the current API key.')) return
 
     try {
-      const newApiKey = Math.random().toString(36).substring(2, 15)
+      const newApiKey = generateApiKey()
 
       const { data: updated, error: updateError } = await supabase
         .from('companies')
@@ -118,7 +120,7 @@ export default function AdminPage() {
 
       setCompany(updated)
     } catch (err) {
-      console.error('Error regenerating API key:', err)
+      console.error('Error regenerating API key:', describeError(err))
       setError('Failed to regenerate API key')
     }
   }
@@ -164,7 +166,7 @@ export default function AdminPage() {
 
       router.push('/')
     } catch (err) {
-      console.error('Error deleting company:', err)
+      console.error('Error deleting company:', describeError(err))
       setError('Failed to delete company')
     }
   }
@@ -305,5 +307,19 @@ export default function AdminPage() {
         </Card>
       </main>
     </div>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-background">
+          <p className="text-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <AdminPageContent />
+    </Suspense>
   )
 }

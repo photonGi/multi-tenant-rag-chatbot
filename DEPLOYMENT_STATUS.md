@@ -22,7 +22,7 @@ Your complete multi-tenant RAG chatbot frontend is built, tested, and ready to u
   - Signup with email confirmation
   - Login/logout
   - Secure session management
-  - Protected routes via middleware
+  - Protected routes via proxy
 
 ### ✅ Company Management
 - **Create:** New companies with auto-generated API keys
@@ -106,7 +106,7 @@ Your complete multi-tenant RAG chatbot frontend is built, tested, and ready to u
 - ✅ `lib/n8n/client.ts` - n8n API client
 
 ### Configuration
-- ✅ `middleware.ts` - Auth middleware
+- ✅ `proxy.ts` - Auth proxy (Next 16 middleware)
 - ✅ `app/layout.tsx` - Root layout (updated)
 - ✅ `tailwind.config.ts` - Tailwind configuration
 

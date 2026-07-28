@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { describeError } from '@/lib/errors'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -14,16 +15,18 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [companies, setCompanies] = useState<any[]>([])
   const [selectedCompany, setSelectedCompany] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser()
+        const { data: authData, error: authError } =
+          await supabase.auth.getUser()
+        const authUser = authData?.user
 
-        if (!authUser) {
+        // Only a genuine auth failure sends the user to the login page.
+        if (authError || !authUser) {
           router.push('/auth/login')
           return
         }
@@ -31,19 +34,26 @@ export default function Dashboard() {
         setUser(authUser)
 
         // Fetch user's companies
-        const { data: companiesData, error } = await supabase
+        const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
           .select('*')
           .eq('owner_id', authUser.id)
 
-        if (error) throw error
+        if (companiesError) {
+          // A failed query is not an auth problem — show it instead of
+          // silently bouncing the user back to login.
+          console.error('Failed to load companies:', describeError(companiesError))
+          setError(describeError(companiesError))
+          return
+        }
+
         setCompanies(companiesData || [])
         if (companiesData && companiesData.length > 0) {
           setSelectedCompany(companiesData[0])
         }
       } catch (error) {
-        console.error('Auth error:', error)
-        router.push('/auth/login')
+        console.error('Failed to load dashboard:', describeError(error))
+        setError(describeError(error))
       } finally {
         setLoading(false)
       }
@@ -95,6 +105,11 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-6 rounded-md border border-destructive/50 bg-destructive/10 p-4">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
         {companies.length === 0 ? (
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold text-foreground mb-4">No Companies Yet</h2>

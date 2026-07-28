@@ -10,7 +10,7 @@ This is a **production-ready Next.js 16 frontend** for a multi-tenant RAG chatbo
 - ✅ Email/password signup and login via Supabase Auth
 - ✅ Secure session management with cookies
 - ✅ Auth callback route for token exchange
-- ✅ Protected routes with middleware
+- ✅ Protected routes with proxy
 - ✅ Error handling pages
 
 **Files:**
@@ -18,7 +18,7 @@ This is a **production-ready Next.js 16 frontend** for a multi-tenant RAG chatbo
 - `app/auth/sign-up/page.tsx` - Registration
 - `app/auth/callback/route.ts` - OAuth callback
 - `app/auth/error/page.tsx` - Error page
-- `middleware.ts` - Route protection
+- `proxy.ts` - Route protection
 
 #### 2. **Company Management**
 - ✅ Create new companies
@@ -167,7 +167,7 @@ This is a **production-ready Next.js 16 frontend** for a multi-tenant RAG chatbo
 **Security:**
 - Supabase Auth for user management
 - Row-level security on all tables
-- CSRF protection via middleware
+- CSRF protection via proxy
 - Secure session management
 - No sensitive data in frontend code
 
@@ -265,7 +265,7 @@ Can be deployed to:
 **Pages:** 7 main pages + components
 **Components:** UI components from shadcn
 **Library:** Supabase clients, n8n client, utilities
-**Configuration:** Tailwind, middleware, schema
+**Configuration:** Tailwind, proxy, schema
 **Documentation:** SETUP.md, QUICKSTART.md, this file
 
 **Total:** ~2,000 lines of TypeScript/React code

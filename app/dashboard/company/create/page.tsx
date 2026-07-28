@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { describeError } from '@/lib/errors'
+import { generateApiKey } from '@/lib/api-key'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -16,21 +18,6 @@ export default function CreateCompanyPage() {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  const generateApiKey = () => {
-    if (typeof window !== 'undefined' && window.crypto) {
-      // Client-side generation with Web Crypto API
-      const randomBytes = new Uint8Array(32)
-      window.crypto.getRandomValues(randomBytes)
-      return Array.from(randomBytes)
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('')
-    }
-    // Fallback for environments without crypto
-    return Math.random().toString(36).substring(2, 15) +
-           Math.random().toString(36).substring(2, 15) +
-           Math.random().toString(36).substring(2, 15)
-  }
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,7 +58,7 @@ export default function CreateCompanyPage() {
       // Navigate to dashboard
       router.push(`/?company_id=${data.id}`)
     } catch (err: any) {
-      console.error('Error creating company:', err)
+      console.error('Error creating company:', describeError(err))
       setError(err.message || 'Failed to create company')
     } finally {
       setLoading(false)
