@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { Panel } from '@/components/cerebros/ui'
+import { Bot } from 'lucide-react'
 
 /**
  * Centred auth surface. Same three-layer depth as the console — canvas behind,
@@ -10,7 +11,7 @@ import { Panel } from '@/components/cerebros/ui'
 export function AuthShell({
   title,
   subtitle,
-  badge = 'ACCESS',
+  badge = 'AUTHORISE',
   children,
   footer,
 }: {
@@ -25,7 +26,7 @@ export function AuthShell({
       <div className="w-full max-w-sm animate-slide-up">
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink-900 text-white shadow-soft">
-            <span className="text-lg font-bold tracking-tighter">C</span>
+            <span className="text-lg font-bold tracking-tighter"><Bot/></span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold tracking-tight text-ink-900 uppercase">

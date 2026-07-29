@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 
 import { AuthShell } from '@/components/cerebros/auth-shell'
+import { PasswordInput } from '@/components/cerebros/password-input'
 import { Alert, Btn, Label, TextInput } from '@/components/cerebros/ui'
 import { createClient } from '@/lib/supabase/client'
 
@@ -64,9 +65,8 @@ export default function LoginPage() {
 
         <div>
           <Label htmlFor="password">Password</Label>
-          <TextInput
+          <PasswordInput
             id="password"
-            type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
