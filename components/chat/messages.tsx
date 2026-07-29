@@ -66,7 +66,7 @@ function AssistantMessage({
   fresh: boolean
 }) {
   return (
-    <div className="flex gap-2.5 sm:gap-4 w-3/4">
+    <div className="flex gap-2.5 sm:gap-4">
       <div
         className={cn(
           'mt-1 flex h-8 w-8 shrink-0 origin-bottom items-center justify-center rounded-lg shadow-soft',
