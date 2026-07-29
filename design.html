@@ -1,0 +1,1190 @@
+<html lang="en" class="antialiased"><head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CerebrOS | Nairobi City Thunder | Unified Intelligence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+theme: {
+extend: {
+fontFamily: {
+sans: ['Inter', 'sans-serif'],
+mono: ['JetBrains Mono', 'monospace'],
+},
+colors: {
+canvas: '#FAFAFA',
+surface: '#FFFFFF',
+border: '#E4E4E7',
+brand: '#F59E0B',
+ink: {
+950: '#09090B',
+900: '#18181B',
+500: '#71717A',
+400: '#A1A1AA',
+300: '#D4D4D8',
+200: '#E4E4E7',
+100: '#F4F4F5',
+50:  '#FAFAFA',
+},
+success: '#10B981',
+alert: '#EF4444',
+warning: '#F59E0B',
+purple: '#8B5CF6',
+},
+boxShadow: {
+'soft': '0 2px 8px rgba(0, 0, 0, 0.02)',
+'elevated': '0 8px 16px -4px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02)',
+},
+animation: {
+'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+'fade-in': 'fadeIn 0.3s ease-out forwards',
+'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+'blink': 'blink 1s step-end infinite',
+},
+keyframes: {
+fadeIn: {
+'0%': { opacity: '0' },
+'100%': { opacity: '1' },
+},
+slideUp: {
+'0%': { transform: 'translateY(8px)', opacity: '0' },
+'100%': { transform: 'translateY(0)', opacity: '1' },
+},
+blink: {
+'0%, 100%': { opacity: '1' },
+'50%': { opacity: '0' },
+}
+}
+}
+}
+}
+</script>
+<style>
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E4E4E7; border-radius: 4px; }
+.upload-zone:hover {
+border-color: #F59E0B;
+background-color: #FEF3C7;
+}
+.timeline-episode::before {
+content: '';
+position: absolute;
+top: 24px;
+bottom: -24px;
+left: 19px;
+width: 1px;
+background-color: #E4E4E7;
+z-index: 0;
+}
+.timeline-episode:last-child::before {
+display: none;
+}
+/* Pipeline Styles */
+.step-item { transition: all 0.3s ease; }
+.step-item.pending { opacity: 0.4; }
+.step-item.active { opacity: 1; color: #18181B; }
+.step-item.done { opacity: 0.6; color: #71717A; }
+/* Tooltip behavior */
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after {
+content: attr(data-tooltip);
+position: absolute;
+bottom: -30px;
+left: 50%;
+transform: translateX(-50%);
+background: #18181B;
+color: white;
+padding: 4px 8px;
+border-radius: 4px;
+font-size: 10px;
+white-space: nowrap;
+z-index: 60;
+opacity: 1;
+pointer-events: none;
+animation: fadeIn 0.2s ease;
+}
+</style></head>
+<body class="bg-canvas text-ink-900 font-sans h-screen flex overflow-hidden selection:bg-brand/20">
+
+    <!-- LEFT RAIL -->
+    <nav class="w-16 border-r border-border flex flex-col items-center py-5 bg-surface z-50 shrink-0 h-full relative">
+        <div class="w-10 h-10 flex items-center justify-center mb-8 shrink-0 bg-ink-900 text-white rounded-lg shadow-soft cursor-pointer hover:bg-ink-800 transition-colors" onclick="resetChat()">
+            <span class="font-bold text-lg tracking-tighter">T</span>
+        </div>
+
+        <div class="flex flex-col gap-3 w-full items-center" id="nav-container">
+            <!-- JS Rendered -->
+        </div>
+
+        <div class="mt-auto flex flex-col items-center pb-6 gap-6">
+            <div class="group relative flex flex-col items-center gap-1 cursor-help">
+                <div id="status-dot" class="w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-pulse-slow"></div>
+                <span class="text-[9px] font-mono text-ink-400 opacity-0 group-hover:opacity-100 absolute bottom-4 transition-opacity whitespace-nowrap bg-surface border border-border px-2 py-0.5 rounded shadow-soft">Unified Graph: Live</span>
+            </div>
+             <button class="w-8 h-8 rounded-full border border-border overflow-hidden bg-ink-50 hover:border-ink-300 transition-colors">
+                <img src="https://ui-avatars.com/api/?name=Executive&amp;background=18181b&amp;color=fff&amp;font-size=0.33" alt="User" class="w-full h-full object-cover">
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="flex-1 relative flex flex-col h-full w-full bg-canvas/30">
+        
+        <!-- Header -->
+        <header class="w-full px-8 py-4 flex justify-between items-center z-40 bg-canvas/90 backdrop-blur-sm sticky top-0 border-b border-border/40">
+            <div class="flex flex-col">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold tracking-tight text-ink-900">NAIROBI CITY THUNDER</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-ink-100 text-ink-500 border border-ink-200">INTELLIGENCE</span>
+                </div>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-[10px] text-ink-500 font-mono">SEASON 24/25 • WEEK 8</span>
+                    <span id="active-thread-label" class="opacity-0 transition-opacity duration-300 text-[10px] text-brand font-medium border-l border-ink-200 pl-2 ml-0.5"></span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                 <div class="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-md shadow-soft">
+                    <span class="iconify w-3.5 h-3.5 text-brand" data-icon="lucide:radio"></span>
+                    <span class="text-[10px] font-medium text-ink-600">Signals:</span>
+                    <span class="text-[10px] font-mono text-ink-400">TIX • APP • WEB • MERCH • GAMIFICATION</span>
+                </div>
+                
+                <!-- Explicit New Chat Button -->
+                <button onclick="resetChat()" class="group flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-surface shadow-soft hover:shadow-elevated hover:border-ink-300 transition-all cursor-pointer">
+                    <span class="iconify w-4 h-4 text-ink-500 group-hover:text-ink-900" data-icon="lucide:square-pen"></span>
+                    <span class="hidden sm:block text-xs font-medium text-ink-600 group-hover:text-ink-900">New Chat</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Content -->
+        <div id="main-view" class="flex-1 relative overflow-hidden flex flex-col">
+            <!-- Content Injected via JS -->
+        </div>
+
+    </main>
+
+    <!-- UPLOAD MODAL -->
+    <div id="upload-modal" class="hidden fixed inset-0 z-[60] bg-ink-900/20 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="bg-surface w-full max-w-2xl rounded-xl shadow-2xl border border-border overflow-hidden animate-slide-up">
+            <div class="px-6 py-4 border-b border-border flex justify-between items-center bg-canvas">
+                <div class="flex items-center gap-2">
+                    <span class="iconify w-5 h-5 text-ink-900" data-icon="lucide:file-spreadsheet"></span>
+                    <span class="text-sm font-semibold text-ink-900">Review Data Import</span>
+                </div>
+                <button onclick="closeModal()" class="text-ink-400 hover:text-ink-900"><span class="iconify w-5 h-5" data-icon="lucide:x"></span></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="flex items-start gap-4 p-4 bg-ink-50 border border-border rounded-lg">
+                    <div class="w-10 h-10 bg-white border border-border rounded flex items-center justify-center shrink-0">
+                        <span class="iconify w-6 h-6 text-green-600" data-icon="lucide:file-csv"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-medium text-ink-900 truncate">POS_Transactions_Oct27_Nairobi.csv</h3>
+                        <p class="text-xs text-ink-500 mt-1">Detected Type: <span class="font-mono text-ink-900 bg-white px-1 border border-border rounded">Concessions / POS</span></p>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-lg font-semibold text-ink-900">2,841</span>
+                        <span class="block text-[10px] text-ink-500 uppercase tracking-wide">Rows Found</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-baseline mb-2">
+                        <span class="text-xs font-semibold text-ink-600 uppercase tracking-wider">Identity Resolution Preview</span>
+                        <span class="text-xs font-mono text-ink-500">Match Rate: <span class="text-ink-900 font-bold">68%</span></span>
+                    </div>
+                    <div class="w-full h-2 bg-ink-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-brand to-brand/80 w-[68%] relative">
+                            <div class="absolute right-0 top-0 bottom-0 w-px bg-white/50"></div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-ink-400 mt-2 flex items-center gap-1">
+                        <span class="iconify w-3 h-3" data-icon="lucide:info"></span>
+                        Matches based on masked card hash &amp; loyalty scan.
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-border bg-canvas flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 text-xs font-medium text-ink-600 hover:text-ink-900 transition-colors">Cancel</button>
+                <button onclick="confirmUpload()" class="px-4 py-2 text-xs font-medium text-white bg-ink-900 rounded shadow-sm hover:bg-ink-800 transition-colors flex items-center gap-2">
+                    <span class="iconify w-4 h-4" data-icon="lucide:database"></span>
+                    Ingest &amp; Merge
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        // State Management
+        const state = {
+            view: 'command',
+            activeThreadId: null,
+            threads: [], 
+            history: [], 
+            
+            pendingAction: null,
+            approvedActions: [],
+            executedActions: [],
+            
+            dataHealth: { ticketing: 98, pos: 0, identity: 82.4, engagement: 100 },
+            hasUploadedPOS: false,
+            manualUploads: [],
+            isProcessing: false,
+
+            // Gamification & Engagement Data Model
+            engagement: {
+                totalPointsIssued: "1.2M",
+                activeParticipants: "14,502",
+                activeStreaks: "2,109",
+                leaderboard: [
+                    { rank: 1, name: "J. Kamau", points: 15400, badge: 'crown', avatar: 'JK' },
+                    { rank: 2, name: "S. Ochieng", points: 14250, badge: 'flame', avatar: 'SO' },
+                    { rank: 3, name: "M. Wanjiku", points: 13800, badge: 'star', avatar: 'MW' },
+                    { rank: 4, name: "D. Mwangi", points: 12100, badge: 'shield', avatar: 'DM' },
+                    { rank: 5, name: "A. Kiprop", points: 11550, badge: 'zap', avatar: 'AK' },
+                ],
+                challenges: [
+                    { id: 'ch_1', name: "Merch Monday", desc: "Buy any jersey", reward: "500 XP", status: "Active", progress: 64 },
+                    { id: 'ch_2', name: "The 6th Man", desc: "Check-in 30m early", reward: "Badge", status: "Active", progress: 32 },
+                ]
+            }
+        };
+
+        const navItems = [
+            { id: 'command', icon: 'message-square-text', label: 'Command Center' },
+            { id: 'history', icon: 'messages-square', label: 'Chat History' }, // Added History
+            { id: 'engagement', icon: 'trophy', label: 'Engagement Engine' }, 
+            { id: 'actions', icon: 'send', label: 'Actions' },
+            { id: 'timeline', icon: 'clock', label: 'Fan Timeline' },
+            { id: 'intelligence', icon: 'brain-circuit', label: 'Intelligence Log' },
+            { id: 'data', icon: 'database', label: 'Data House' }
+        ];
+
+        // --- PIPELINE DEFINITION ---
+        const pipelineSteps = [
+            { id: 'step-1', label: 'Loading signals', icon: 'radio' },
+            { id: 'step-2', label: 'Normalizing fan identities', icon: 'users' },
+            { id: 'step-3', label: 'Validating data health & coverage', icon: 'activity' },
+            { id: 'step-4', label: 'Detecting anomalies & segment shifts', icon: 'search' },
+            { id: 'step-5', label: 'Attributing cross-channel intent', icon: 'git-merge' },
+            { id: 'step-6', label: 'Synthesizing insights & explanations', icon: 'sparkles' },
+            { id: 'step-7', label: 'Preparing draft actions for approval', icon: 'file-signature' },
+        ];
+
+        function renderNav() {
+            const container = document.getElementById('nav-container');
+            container.innerHTML = navItems.map(item => {
+                let badge = '';
+                if(item.id === 'history' && state.threads.length > 0) {
+                    badge = `<span class="absolute top-2 right-2 w-1.5 h-1.5 bg-brand rounded-full ring-2 ring-white"></span>`;
+                }
+
+                return `
+                <button onclick="switchView('${item.id}')" 
+                    class="w-10 h-10 flex items-center justify-center rounded-lg relative group transition-all duration-200 ${state.view === item.id ? 'bg-ink-900 text-surface shadow-md' : 'text-ink-400 hover:text-ink-900 hover:bg-ink-100'}" 
+                    data-tooltip="${item.label}">
+                    <span class="iconify w-4.5 h-4.5" data-icon="lucide:${item.icon}"></span>
+                    ${badge}
+                </button>
+            `}).join('');
+        }
+
+        function switchView(viewId) {
+            state.view = viewId;
+            renderNav();
+            renderMainView();
+            updateHeaderTitle();
+        }
+
+        function updateHeaderTitle() {
+            const label = document.getElementById('active-thread-label');
+            if(state.activeThreadId && state.view === 'command') {
+                const thread = state.threads.find(t => t.id === state.activeThreadId);
+                if(thread) {
+                    label.innerText = thread.title;
+                    label.classList.remove('opacity-0');
+                    label.classList.add('opacity-100');
+                }
+            } else {
+                label.classList.remove('opacity-100');
+                label.classList.add('opacity-0');
+            }
+        }
+
+        // --- NEW CHAT & THREAD MGMT ---
+        function resetChat() {
+            // New Chat Functionality
+            state.isProcessing = false;
+            state.activeThreadId = null;
+            state.history = []; 
+            state.pendingAction = null;
+            
+            // Return to zero state in command view
+            if(state.view !== 'command') {
+                switchView('command');
+            } else {
+                renderMainView();
+                updateHeaderTitle();
+            }
+        }
+
+        function resumeThread(threadId) {
+            const thread = state.threads.find(t => t.id === threadId);
+            if (thread) {
+                state.activeThreadId = thread.id;
+                state.history = [...thread.messages]; 
+                switchView('command');
+            }
+        }
+
+        function saveToThread(role, content, extras = {}) {
+            let thread = state.threads.find(t => t.id === state.activeThreadId);
+            const newMessage = { role, content, ...extras };
+            
+            if (!thread) {
+                const id = 'thread-' + Date.now();
+                // Simple title generation
+                const title = role === 'user' ? (content.length > 35 ? content.substring(0, 35) + '...' : content) : 'New Conversation';
+                thread = { id: id, title: title, date: 'Just Now', messages: [] };
+                state.threads.unshift(thread);
+                state.activeThreadId = id;
+                updateHeaderTitle();
+            }
+            thread.messages.push(newMessage);
+            renderNav(); // Update nav badge
+        }
+
+
+        // --- MAIN RENDERER ---
+        function renderMainView() {
+            const container = document.getElementById('main-view');
+            if(state.view === 'command' && state.isProcessing) return; 
+
+            container.innerHTML = '';
+            switch(state.view) {
+                case 'command': renderCommandView(container); break;
+                case 'history': renderHistoryView(container); break; // Added History
+                case 'engagement': renderEngagementView(container); break;
+                case 'actions': renderActionsView(container); break;
+                case 'data': renderDataHouseView(container); break;
+                case 'intelligence': renderIntelligenceView(container); break;
+                case 'timeline': renderTimelineView(container); break;
+                default: container.innerHTML = `<div class="p-10 text-sm text-ink-400">View building: ${state.view}</div>`;
+            }
+        }
+
+        // --- HISTORY VIEW (NEW) ---
+        function renderHistoryView(container) {
+            const threads = state.threads || [];
+            container.innerHTML = `
+                <div class="p-10 max-w-5xl mx-auto w-full animate-fade-in pb-20 space-y-6">
+                    <div class="flex items-end justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-semibold text-ink-900 tracking-tight">Chat History</h2>
+                            <p class="text-sm text-ink-500 mt-1">Resume prior CerebrOS command threads.</p>
+                        </div>
+                        <div class="w-full max-w-sm">
+                            <div class="flex items-center gap-2 bg-surface border border-border rounded-lg px-3 py-2 shadow-soft focus-within:ring-1 focus-within:ring-ink-300 transition-all">
+                                <span class="iconify w-4 h-4 text-ink-400" data-icon="lucide:search"></span>
+                                <input
+                                    id="history-search"
+                                    type="text"
+                                    placeholder="Search conversations..."
+                                    class="w-full bg-transparent border-none outline-none text-sm text-ink-900 placeholder:text-ink-400"
+                                    oninput="filterHistory(this.value)"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="history-list" class="space-y-3">
+                        ${threads.length ? threads.map(t => historyRow(t)).join('') : historyEmpty()}
+                    </div>
+                </div>
+            `;
+        }
+
+        function historyRow(thread) {
+            const firstUser = (thread.messages || []).find(m => m.role === 'user');
+            const preview = firstUser?.content ? firstUser.content : 'Conversation thread';
+            const safePreview = preview.length > 90 ? preview.slice(0, 90) + '...' : preview;
+
+            return `
+                <button onclick="resumeThread('${thread.id}')"
+                    class="w-full text-left bg-surface border border-border rounded-xl p-5 shadow-soft hover:shadow-elevated hover:border-ink-300 transition-all group">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <div class="text-sm font-semibold text-ink-900 truncate group-hover:text-brand transition-colors">${thread.title || 'Conversation'}</div>
+                            <div class="text-xs text-ink-500 mt-1 leading-relaxed">${safePreview}</div>
+                        </div>
+                        <div class="shrink-0 text-[10px] font-mono text-ink-400 bg-ink-50 border border-border rounded px-2 py-1">
+                            ${thread.date || 'Recent'}
+                        </div>
+                    </div>
+                </button>
+            `;
+        }
+
+        function historyEmpty() {
+            return `
+                <div class="py-16 flex flex-col items-center justify-center text-ink-400 border border-dashed border-border rounded-xl">
+                    <span class="iconify w-10 h-10 mb-3 opacity-40" data-icon="lucide:messages-square"></span>
+                    <div class="text-sm font-medium text-ink-500">No conversations yet.</div>
+                    <div class="text-xs text-ink-400 mt-1">Ask a question in Command to create your first thread.</div>
+                </div>
+            `;
+        }
+
+        function filterHistory(query) {
+            const q = (query || '').toLowerCase().trim();
+            const list = document.getElementById('history-list');
+            if (!list) return;
+
+            const threads = state.threads || [];
+            const filtered = !q ? threads : threads.filter(t => {
+                const title = (t.title || '').toLowerCase();
+                const firstUser = (t.messages || []).find(m => m.role === 'user');
+                const snippet = (firstUser?.content || '').toLowerCase();
+                return title.includes(q) || snippet.includes(q);
+            });
+
+            list.innerHTML = filtered.length
+                ? filtered.map(t => historyRow(t)).join('')
+                : `
+                <div class="py-16 flex flex-col items-center justify-center text-ink-400 border border-dashed border-border rounded-xl">
+                    <span class="iconify w-10 h-10 mb-3 opacity-40" data-icon="lucide:search-x"></span>
+                    <div class="text-sm font-medium text-ink-500">No conversations found.</div>
+                    <div class="text-xs text-ink-400 mt-1">Try a different search term.</div>
+                </div>
+                `;
+        }
+
+        // --- ENGAGEMENT VIEW ---
+        function renderEngagementView(container) {
+            container.innerHTML = `
+                <div class="p-10 max-w-6xl mx-auto w-full animate-fade-in pb-20 space-y-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-semibold text-ink-900 tracking-tight">Engagement Engine</h2>
+                            <p class="text-sm text-ink-500 mt-1">Gamification, loyalty rewards, and fan challenges.</p>
+                        </div>
+                        <div class="flex gap-2">
+                             <button class="px-3 py-1.5 text-xs font-medium bg-white border border-border rounded shadow-sm hover:border-ink-300 transition-colors">Manage Rewards</button>
+                             <button class="px-3 py-1.5 text-xs font-medium bg-ink-900 text-white rounded shadow-sm hover:bg-ink-800 transition-colors">New Challenge</button>
+                        </div>
+                    </div>
+
+                    <!-- Top Stats -->
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="bg-surface border border-border rounded-xl p-5 shadow-soft flex items-center justify-between group hover:border-brand/30 transition-all">
+                            <div>
+                                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wider mb-1">Total Points Issued</p>
+                                <h3 class="text-2xl font-semibold text-ink-900">${state.engagement.totalPointsIssued}</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand">
+                                <span class="iconify w-5 h-5" data-icon="lucide:coins"></span>
+                            </div>
+                        </div>
+                        <div class="bg-surface border border-border rounded-xl p-5 shadow-soft flex items-center justify-between group hover:border-purple-300 transition-all">
+                            <div>
+                                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wider mb-1">Active Participants</p>
+                                <h3 class="text-2xl font-semibold text-ink-900">${state.engagement.activeParticipants}</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                <span class="iconify w-5 h-5" data-icon="lucide:users"></span>
+                            </div>
+                        </div>
+                         <div class="bg-surface border border-border rounded-xl p-5 shadow-soft flex items-center justify-between group hover:border-orange-300 transition-all">
+                            <div>
+                                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wider mb-1">Active Streaks</p>
+                                <h3 class="text-2xl font-semibold text-ink-900">${state.engagement.activeStreaks}</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                                <span class="iconify w-5 h-5" data-icon="lucide:flame"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-12 gap-8">
+                        <!-- Active Challenges -->
+                        <div class="col-span-7 space-y-4">
+                            <h3 class="text-xs font-semibold text-ink-900 uppercase tracking-wider">Active Challenges</h3>
+                            <div class="grid gap-3">
+                                ${state.engagement.challenges.map(ch => `
+                                    <div class="bg-surface border border-border rounded-lg p-4 flex items-center gap-4 hover:shadow-soft transition-all">
+                                        <div class="w-12 h-12 rounded-lg bg-ink-50 flex items-center justify-center text-ink-500 shrink-0">
+                                            <span class="iconify w-6 h-6" data-icon="lucide:target"></span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex justify-between items-start">
+                                                <h4 class="text-sm font-semibold text-ink-900 truncate">${ch.name}</h4>
+                                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-100">${ch.status}</span>
+                                            </div>
+                                            <p class="text-xs text-ink-500 mt-0.5">${ch.desc}</p>
+                                            <div class="mt-3 flex items-center gap-3">
+                                                <div class="flex-1 h-1.5 bg-ink-100 rounded-full overflow-hidden">
+                                                    <div class="h-full bg-brand rounded-full" style="width: ${ch.progress}%"></div>
+                                                </div>
+                                                <span class="text-[10px] font-mono text-ink-400">${ch.progress}%</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right pl-4 border-l border-border/50">
+                                            <span class="block text-[10px] text-ink-400 uppercase tracking-wider">Reward</span>
+                                            <span class="block text-sm font-semibold text-brand">${ch.reward}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Leaderboard -->
+                        <div class="col-span-5 space-y-4">
+                             <div class="flex items-center justify-between">
+                                <h3 class="text-xs font-semibold text-ink-900 uppercase tracking-wider">Fan Leaderboard</h3>
+                                <span class="text-[10px] text-ink-400 font-mono">Top 5 (Week 8)</span>
+                            </div>
+                            <div class="bg-surface border border-border rounded-xl overflow-hidden shadow-soft">
+                                <table class="w-full text-left">
+                                    <thead class="bg-ink-50 border-b border-border">
+                                        <tr>
+                                            <th class="px-4 py-2 text-[10px] font-bold text-ink-400 uppercase">Rank</th>
+                                            <th class="px-4 py-2 text-[10px] font-bold text-ink-400 uppercase">Fan</th>
+                                            <th class="px-4 py-2 text-[10px] font-bold text-ink-400 uppercase text-right">XP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-border">
+                                        ${state.engagement.leaderboard.map(u => `
+                                            <tr class="hover:bg-ink-50/50 transition-colors">
+                                                <td class="px-4 py-3 text-xs font-medium text-ink-500">#${u.rank}</td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-6 h-6 rounded-full bg-ink-900 text-white flex items-center justify-center text-[9px] font-bold">${u.avatar}</div>
+                                                        <span class="text-sm text-ink-900 font-medium">${u.name}</span>
+                                                        ${u.badge ? `<span class="iconify w-3 h-3 text-brand" data-icon="lucide:${u.badge}"></span>` : ''}
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3 text-xs font-mono text-ink-900 text-right">${u.points.toLocaleString()}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- COMMAND VIEW ---
+        function renderCommandView(container) {
+            if (state.history.length === 0) {
+                // ZERO STATE
+                container.innerHTML = `
+                    <div class="absolute inset-0 flex flex-col items-center justify-center z-30 animate-fade-in p-6">
+                        <div class="w-full max-w-2xl flex flex-col items-center gap-8">
+                            <div class="text-center space-y-2">
+                                <h1 class="text-2xl font-semibold text-ink-900 tracking-tight">CerebrOS Command</h1>
+                                <p class="text-sm text-ink-500 font-light max-w-md mx-auto">
+                                    Unified intelligence across integrated systems and engagement engine.
+                                </p>
+                            </div>
+                            <div class="w-full relative group">
+                                <div class="absolute -inset-0.5 bg-gradient-to-r from-ink-200 to-ink-100 rounded-xl opacity-30 blur transition duration-500 group-hover:opacity-50"></div>
+                                <div class="relative bg-surface rounded-xl shadow-elevated border border-border group-focus-within:border-ink-300 transition-all duration-300 overflow-hidden p-1">
+                                    <div class="flex items-center px-4 py-3 gap-3">
+                                        <span class="iconify w-5 h-5 text-ink-400" data-icon="lucide:sparkles"></span>
+                                        <input type="text" id="command-input" placeholder="Ask about fans, engagement, or challenges..." autocomplete="off"
+                                            class="w-full bg-transparent border-none outline-none text-base text-ink-900 placeholder:text-ink-400 font-light"
+                                            onkeydown="if(event.key === 'Enter') handleQuery(this.value)">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] text-ink-400 font-mono border border-ink-200 rounded px-1.5 py-0.5">⏎</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full opacity-0 animate-[slideUp_0.5s_ease-out_0.2s_forwards]">
+                                <button onclick="handleQuery('How can we boost attendance for the Warriors game?')" class="text-left p-3 rounded-lg border border-border bg-surface hover:border-ink-300 hover:shadow-soft transition-all group">
+                                    <span class="block text-xs font-semibold text-ink-900 mb-1 group-hover:text-brand transition-colors">Strategy</span>
+                                    <span class="block text-sm text-ink-500 font-light">How can we boost attendance for the Warriors game?</span>
+                                </button>
+                                <button onclick="handleQuery('Identify top fans for VIP rewards')" class="text-left p-3 rounded-lg border border-border bg-surface hover:border-ink-300 hover:shadow-soft transition-all group">
+                                    <span class="block text-xs font-semibold text-ink-900 mb-1 group-hover:text-brand transition-colors">Loyalty</span>
+                                    <span class="block text-sm text-ink-500 font-light">Identify top fans for VIP rewards</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // CHAT INTERFACE
+                let html = `
+                    <div class="flex-1 overflow-y-auto px-12 py-8 space-y-12 scroll-smooth pb-40" id="chat-container">
+                        ${state.history.map(msg => renderMessage(msg)).join('')}
+                    </div>
+                    <div class="absolute bottom-0 left-0 w-full px-12 pb-8 pt-20 bg-gradient-to-t from-canvas via-canvas to-transparent z-20">
+                        <div class="max-w-4xl mx-auto relative bg-surface rounded-xl shadow-elevated border border-border flex items-center p-1">
+                            <span class="iconify w-5 h-5 text-ink-400 ml-4" data-icon="lucide:message-square"></span>
+                            <input type="text" id="chat-input-bar" placeholder="Ask a follow up..." class="w-full bg-transparent border-none outline-none text-ink-900 placeholder:text-ink-400 px-4 py-3 font-light" onkeydown="if(event.key === 'Enter') handleQuery(this.value)">
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+                setTimeout(() => { const chat = document.getElementById('chat-container'); chat.scrollTop = chat.scrollHeight; }, 10);
+            }
+        }
+
+        function renderMessage(msg) {
+            if (msg.role === 'user') {
+                return `
+                    <div class="flex justify-end animate-slide-up">
+                        <div class="bg-ink-100 text-ink-900 px-5 py-3 rounded-2xl rounded-tr-sm max-w-xl text-lg font-light shadow-sm">
+                            ${msg.content}
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="flex gap-5 max-w-4xl animate-slide-up pr-12">
+                        <div class="w-8 h-8 rounded-lg bg-ink-900 text-brand flex items-center justify-center shrink-0 mt-1 shadow-soft">
+                            <span class="iconify w-5 h-5" data-icon="lucide:bot"></span>
+                        </div>
+                        <div class="flex-1 space-y-4">
+                            
+                            ${msg.context ? `
+                                <div class="bg-ink-50 border border-border rounded-lg px-3 py-2 max-w-fit">
+                                    <span class="text-[10px] uppercase font-bold text-ink-400 tracking-wider block mb-1">Context Applied</span>
+                                    <ul class="text-[10px] text-ink-600 font-mono space-y-0.5">
+                                        ${msg.context.map(c => `<li class="flex items-center gap-1.5"><span class="w-1 h-1 bg-ink-300 rounded-full"></span>${c}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            <div class="prose prose-zinc max-w-none text-ink-900 text-base leading-relaxed">
+                                ${msg.content}
+                            </div>
+
+                            ${msg.evidence ? renderEvidence(msg.evidence) : ''}
+                            ${msg.action ? renderActionCard(msg.action) : ''}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // --- PIPELINE RENDERING & LOGIC ---
+
+        function getPipelineHTML(tempId) {
+            return `
+                <div id="${tempId}" class="flex gap-5 max-w-4xl animate-slide-up pr-12">
+                     <div class="w-8 h-8 rounded-lg bg-white border border-border text-ink-300 flex items-center justify-center shrink-0 mt-1 shadow-soft">
+                        <span class="iconify w-4 h-4 animate-spin" data-icon="lucide:loader-2"></span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-surface border border-border rounded-lg shadow-soft overflow-hidden max-w-md">
+                            <div class="bg-ink-50 border-b border-border px-4 py-2 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 bg-brand rounded-full animate-pulse"></div>
+                                    <span class="text-[10px] font-mono font-medium text-ink-900 uppercase">Processing</span>
+                                </div>
+                                <div class="text-[10px] font-mono text-ink-500">
+                                    STATUS: <span id="status-${tempId}" class="text-ink-900">INITIALIZING</span><span class="animate-blink">_</span>
+                                </div>
+                            </div>
+                            <div class="p-5 space-y-3">
+                                <div class="text-[10px] text-ink-400 font-mono uppercase tracking-wider mb-2">Analysis Pipeline</div>
+                                ${pipelineSteps.map((step, idx) => `
+                                    <div id="step-${tempId}-${idx}" class="step-item flex items-center gap-3 pending text-sm">
+                                        <div class="step-icon w-4 h-4 flex items-center justify-center">
+                                            <span class="iconify w-3.5 h-3.5" data-icon="lucide:circle"></span>
+                                        </div>
+                                        <span class="font-medium tracking-tight">${step.label}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function runPipeline(tempId, onComplete) {
+            let currentStep = 0;
+            const totalSteps = pipelineSteps.length;
+            
+            setTimeout(() => {
+                const interval = setInterval(() => {
+                    if (!state.isProcessing) { clearInterval(interval); return; }
+
+                    if (currentStep >= totalSteps) {
+                        clearInterval(interval);
+                        
+                        const lastRow = document.getElementById(`step-${tempId}-${totalSteps - 1}`);
+                        if (lastRow) {
+                            lastRow.classList.remove('active', 'pending');
+                            lastRow.classList.add('done');
+                            lastRow.querySelector('.step-icon').innerHTML = `<span class="iconify w-3.5 h-3.5 text-success" data-icon="lucide:check-circle-2"></span>`;
+                        }
+                        
+                        const statusText = document.getElementById(`status-${tempId}`);
+                        if(statusText) statusText.innerText = 'COMPLETE';
+
+                        setTimeout(onComplete, 600); 
+                        return;
+                    }
+
+                    const stepRow = document.getElementById(`step-${tempId}-${currentStep}`);
+                    const statusText = document.getElementById(`status-${tempId}`);
+                    
+                    if (stepRow) {
+                        if (currentStep > 0) {
+                            const prevRow = document.getElementById(`step-${tempId}-${currentStep - 1}`);
+                            prevRow.classList.remove('active');
+                            prevRow.classList.add('done');
+                            prevRow.querySelector('.step-icon').innerHTML = `<span class="iconify w-3.5 h-3.5 text-success" data-icon="lucide:check-circle-2"></span>`;
+                        }
+                        stepRow.classList.remove('pending');
+                        stepRow.classList.add('active');
+                        stepRow.querySelector('.step-icon').innerHTML = `<span class="iconify w-3.5 h-3.5 text-brand animate-spin" data-icon="lucide:loader-2"></span>`;
+                        
+                        const verbs = ['LOADING', 'NORMALIZING', 'VALIDATING', 'DETECTING', 'ATTRIBUTING', 'SYNTHESIZING', 'DRAFTING'];
+                        if(statusText) statusText.innerText = verbs[currentStep];
+                    }
+                    currentStep++;
+                }, 600); 
+            }, 300);
+        }
+
+        // --- CORE LOGIC ---
+
+        function renderEvidence(data) {
+            if (data.type === 'attendance_drop') {
+                return `
+                <div class="bg-surface border border-border rounded-lg p-5 shadow-soft">
+                    <span class="text-xs font-bold text-ink-900 uppercase tracking-wider block mb-3">Signal Analysis</span>
+                    <ul class="space-y-2 text-sm text-ink-600">
+                        <li class="flex justify-between items-center pb-2 border-b border-border/50">
+                            <span>Ticket Reservations</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-alert font-medium">-12%</span>
+                                <span class="text-[10px] font-mono text-ink-400 bg-ink-50 px-1.5 rounded border border-border">(Ticketing)</span>
+                            </div>
+                        </li>
+                        <li class="flex justify-between items-center pb-2 border-b border-border/50">
+                            <span>App Daily Active Users</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-success font-medium">+5%</span>
+                                <span class="text-[10px] font-mono text-ink-400 bg-ink-50 px-1.5 rounded border border-border">(Engagement)</span>
+                            </div>
+                        </li>
+                         <li class="flex justify-between items-center">
+                            <span>Gamification Opportunity</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-ink-900 font-medium">High</span>
+                                <span class="text-[10px] font-mono text-ink-400 bg-ink-50 px-1.5 rounded border border-border">(Inference)</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>`;
+            }
+            return '';
+        }
+
+        function renderActionCard(action) {
+            const isExecuted = state.executedActions.find(a => a.id === action.id);
+            if (isExecuted) {
+                 return `
+                    <div class="flex flex-col gap-2 p-4 bg-emerald-50/50 border border-emerald-100 rounded-lg max-w-md animate-fade-in">
+                        <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600"><span class="iconify w-3.5 h-3.5" data-icon="lucide:check"></span></div>
+                            <span class="text-sm font-medium text-emerald-900">Action Executed</span>
+                        </div>
+                        <div class="pl-9 text-xs text-emerald-700">Gamification layer active. Tracking participation live.</div>
+                    </div>`;
+            }
+            return `
+                <div class="border border-border bg-surface rounded-lg max-w-md shadow-elevated group overflow-hidden transition-all hover:border-ink-300">
+                    <div class="bg-gradient-to-r from-ink-50 to-white px-4 py-3 border-b border-border flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="iconify w-4 h-4 text-brand" data-icon="lucide:trophy"></span>
+                            <span class="text-xs font-bold text-ink-900 uppercase tracking-wide">Recommended Challenge</span>
+                        </div>
+                        <span class="text-[10px] font-mono bg-white border border-border px-1.5 py-0.5 rounded text-ink-500">${action.type}</span>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-semibold text-ink-900 mb-1">${action.title}</h3>
+                            <p class="text-xs text-ink-500 leading-relaxed">${action.description}</p>
+                        </div>
+                        <div class="flex items-center gap-2 p-2 bg-ink-50 rounded border border-border/50">
+                            <span class="iconify w-3.5 h-3.5 text-brand" data-icon="lucide:gift"></span>
+                            <span class="text-xs font-medium text-ink-700">Reward: ${action.reward}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="px-2 py-1 bg-white rounded border border-border flex items-center gap-1.5">
+                                <span class="text-[10px] uppercase text-ink-400 font-bold">Reach</span>
+                                <span class="text-[10px] font-medium text-ink-900">${action.reach}</span>
+                            </div>
+                            <div class="px-2 py-1 bg-white rounded border border-border flex items-center gap-1.5 ml-auto">
+                                <span class="text-[10px] uppercase text-ink-400 font-bold">Est. Lift</span>
+                                <span class="text-[10px] font-medium text-success">${action.impact}</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 pt-1">
+                            <button class="flex-1 px-3 py-2 text-xs font-medium text-ink-600 bg-white border border-border rounded hover:bg-ink-50 transition-colors">Edit</button>
+                            <button onclick="approveAction('${action.id}')" class="flex-1 px-3 py-2 text-xs font-medium text-white bg-ink-900 rounded hover:bg-ink-800 shadow-sm transition-all flex items-center justify-center gap-2">
+                                Approve & Launch
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // --- DATA HOUSE VIEW ---
+        function renderDataHouseView(container) {
+            container.innerHTML = `
+                <div class="p-10 max-w-6xl mx-auto w-full animate-fade-in space-y-8 pb-20">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h2 class="text-xl font-semibold text-ink-900 tracking-tight">Data House</h2>
+                            <p class="text-sm text-ink-500 mt-1">Unified signal ingestion & identity resolution status.</p>
+                        </div>
+                    </div>
+
+                    <!-- Top Metrics -->
+                    <div class="grid grid-cols-4 gap-6">
+                        <div class="col-span-1 bg-surface border border-border rounded-xl p-5 shadow-soft relative overflow-hidden">
+                            <h3 class="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-2">Identity Coverage</h3>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-3xl font-light text-ink-900">${state.dataHealth.identity}%</span>
+                                <span class="text-xs font-medium text-success">+0.2%</span>
+                            </div>
+                            <div class="mt-4 w-full bg-ink-100 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-ink-900 h-full w-[${state.dataHealth.identity}%] transition-all duration-1000"></div>
+                            </div>
+                        </div>
+                        <div class="col-span-3 bg-surface border border-border rounded-xl p-5 shadow-soft">
+                            <h3 class="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-4">Signal Sources</h3>
+                            <div class="flex justify-between items-center gap-4">
+                                ${['Ticketing', 'Access', 'POS', 'Merch', 'App'].map(s => `
+                                    <div class="flex flex-col items-center gap-2 flex-1">
+                                        <div class="w-full flex justify-center mb-1"><div class="w-2 h-2 rounded-full bg-success"></div></div>
+                                        <span class="text-xs font-medium text-ink-900">${s}</span>
+                                        <span class="text-[9px] font-mono text-ink-400 bg-ink-50 px-1.5 py-0.5 rounded border border-border/50">LIVE</span>
+                                    </div>`
+                                ).join('')}
+                                <!-- New Engagement Source -->
+                                <div class="flex flex-col items-center gap-2 flex-1 relative">
+                                    <div class="w-full flex justify-center mb-1 relative">
+                                        <div class="w-2 h-2 rounded-full bg-brand animate-pulse"></div>
+                                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-brand/20 rounded-full animate-ping"></div>
+                                    </div>
+                                    <span class="text-xs font-bold text-ink-900">Gamification</span>
+                                    <span class="text-[9px] font-mono text-ink-900 bg-brand/10 px-1.5 py-0.5 rounded border border-brand/20">HIGH FIDELITY</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="bg-surface border border-border rounded-xl p-6 shadow-soft flex flex-col h-full">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xs font-semibold text-ink-500 uppercase tracking-wider">Manual Ingestion</h3>
+                            </div>
+                            <div onclick="triggerUploadMock()" class="upload-zone flex-1 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center p-8 cursor-pointer transition-all">
+                                <div class="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center mb-3 text-ink-400">
+                                    <span class="iconify w-5 h-5" data-icon="lucide:upload-cloud"></span>
+                                </div>
+                                <p class="text-sm font-medium text-ink-900">Drag & drop files or browse</p>
+                                <p class="text-xs text-ink-400 mt-1">CSV, JSON, XLSX</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-surface border border-border rounded-xl p-6 shadow-soft flex-1">
+                                <h3 class="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-4">Engagement Engine Specs</h3>
+                                <ul class="space-y-3">
+                                    <li class="flex items-start gap-3">
+                                        <div class="mt-0.5 w-4 h-4 rounded bg-brand/10 text-brand flex items-center justify-center"><span class="iconify w-3 h-3" data-icon="lucide:zap"></span></div>
+                                        <div>
+                                            <span class="block text-xs font-medium text-ink-900">Real-time Event Stream</span>
+                                            <span class="block text-[11px] text-ink-500">Sub-second latency on check-ins and reward redemptions.</span>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <div class="mt-0.5 w-4 h-4 rounded bg-brand/10 text-brand flex items-center justify-center"><span class="iconify w-3 h-3" data-icon="lucide:fingerprint"></span></div>
+                                        <div>
+                                            <span class="block text-xs font-medium text-ink-900">Deterministic ID Match</span>
+                                            <span class="block text-[11px] text-ink-500">100% identity resolution for logged-in app users.</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                    </div>
+                </div>`;
+        }
+
+        // --- TIMELINE VIEW ---
+        function renderTimelineView(container) {
+            container.innerHTML = `
+                <div class="p-10 max-w-4xl mx-auto w-full animate-fade-in pb-20">
+                    <h2 class="text-xl font-semibold text-ink-900 tracking-tight mb-8">Fan Experience Episodes</h2>
+                    
+                    <div class="space-y-8 relative">
+                        <!-- Episode 1 -->
+                        <div class="timeline-episode relative pl-12 opacity-60 hover:opacity-100 transition-opacity">
+                            <div class="absolute left-0 top-0 w-10 h-10 rounded-full bg-ink-100 border border-border flex items-center justify-center text-ink-500 z-10">
+                                <span class="text-xs font-bold">W7</span>
+                            </div>
+                            <div class="bg-surface border border-border rounded-xl p-6 shadow-soft space-y-6">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-ink-900">Episode: "Rivalry Week Push"</h3>
+                                        <p class="text-xs text-ink-500 mt-1">Season 24/25 • Week 7 • vs Falcons</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded bg-ink-50 border border-border text-[10px] font-mono text-ink-500">COMPLETE</span>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="w-16 text-[10px] font-mono text-brand pt-1 text-right">ACTION</div>
+                                    <div class="flex-1 text-sm text-ink-900">Deployed "Flash 2-for-1" SMS to Student Segment.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Episode 2 (Current) -->
+                        <div class="timeline-episode relative pl-12">
+                            <div class="absolute left-0 top-0 w-10 h-10 rounded-full bg-white border-2 border-brand text-brand flex items-center justify-center z-10 shadow-sm">
+                                <span class="text-xs font-bold">W8</span>
+                            </div>
+                            <div class="bg-surface border border-brand/30 ring-1 ring-brand/10 rounded-xl p-6 shadow-soft space-y-6">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-ink-900">Episode: "Warriors Game Drive"</h3>
+                                        <p class="text-xs text-ink-500 mt-1">Season 24/25 • Week 8 • vs Warriors</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded bg-brand/10 border border-brand/20 text-[10px] font-mono text-brand font-medium">ACTIVE</span>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div class="flex gap-4">
+                                        <div class="w-16 text-[10px] font-mono text-ink-400 pt-1 text-right">EVENT</div>
+                                        <div class="flex-1 text-sm text-ink-900">Attendance pacing 12% below average. High app engagement detected.</div>
+                                    </div>
+                                    <div class="flex gap-4">
+                                        <div class="w-16 text-[10px] font-mono text-brand pt-1 text-right">ACTION</div>
+                                        <div class="flex-1 text-sm text-ink-900">
+                                            ${state.executedActions.length > 0 
+                                                ? `<span class="flex items-center gap-2">Launched "Thunder Strike" Challenge. <span class="iconify w-3.5 h-3.5 text-success" data-icon="lucide:check-circle"></span></span>` 
+                                                : '<span class="text-ink-400 italic">Pending Approval...</span>'}
+                                        </div>
+                                    </div>
+                                     ${state.executedActions.length > 0 ? `
+                                    <div class="flex gap-4 animate-slide-up">
+                                        <div class="w-16 text-[10px] font-mono text-success pt-1 text-right">OUTCOME</div>
+                                        <div class="flex-1 text-sm text-ink-900">
+                                            <p>1,240 Challenge Acceptances in 10 mins. Ticket reservations +4.5%.</p>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+         // --- INTELLIGENCE VIEW ---
+        function renderIntelligenceView(container) {
+            container.innerHTML = `
+                <div class="p-10 max-w-4xl mx-auto w-full animate-fade-in">
+                    <h2 class="text-xl font-semibold text-ink-900 tracking-tight mb-6">Intelligence Log</h2>
+                    <div class="space-y-4 relative">
+                        <div class="absolute top-4 bottom-4 left-[19px] w-px bg-border -z-10"></div>
+                        
+                         ${state.executedActions.length > 0 ? `
+                        <div class="flex gap-6 animate-slide-up">
+                            <div class="w-10 h-10 rounded-full bg-brand border-4 border-surface flex items-center justify-center text-white shrink-0 shadow-sm z-10">
+                                <span class="iconify w-5 h-5" data-icon="lucide:lightbulb"></span>
+                            </div>
+                            <div class="bg-surface border border-border rounded-lg p-5 shadow-soft flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-brand uppercase tracking-wider">New Insight Learned</span>
+                                    <span class="text-[10px] font-mono text-ink-400">JUST NOW</span>
+                                </div>
+                                <h3 class="text-sm font-medium text-ink-900 mb-1">Gamification Efficacy</h3>
+                                <p class="text-sm text-ink-600 leading-relaxed mb-3">
+                                    Challenges with XP multipliers drive <span class="font-semibold text-ink-900">18% higher RSVP rates</span> than standard discount notifications.
+                                </p>
+                                <div class="flex gap-2">
+                                    <span class="text-[10px] bg-ink-50 px-2 py-1 rounded text-ink-500 border border-border">Source: Action ID_${state.executedActions[0].id}</span>
+                                </div>
+                            </div>
+                        </div>` : ''}
+
+                        <div class="flex gap-6 opacity-70">
+                            <div class="w-10 h-10 rounded-full bg-ink-100 border-4 border-surface flex items-center justify-center text-ink-500 shrink-0 z-10">
+                                <span class="iconify w-4 h-4" data-icon="lucide:trending-up"></span>
+                            </div>
+                            <div class="bg-surface border border-border rounded-lg p-5 flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-ink-900 uppercase tracking-wider">Merch Correlation</span>
+                                    <span class="text-[10px] font-mono text-ink-400">2 DAYS AGO</span>
+                                </div>
+                                <p class="text-sm text-ink-600 mb-3">New jersey drop correlates with +15% App installs within 2 hours of notification.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        // --- ACTIONS VIEW ---
+        function renderActionsView(container) {
+            container.innerHTML = `
+                <div class="p-10 max-w-5xl mx-auto w-full h-full flex flex-col animate-fade-in">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-xl font-semibold text-ink-900 tracking-tight">Action Control</h2>
+                            <p class="text-sm text-ink-500 mt-1">Human-in-the-loop approval workflow.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-6 border-b border-border mb-6">
+                        <button class="pb-3 border-b-2 border-ink-900 text-sm font-medium text-ink-900">Pending</button>
+                        <button class="pb-3 border-b-2 border-transparent text-sm font-medium text-ink-500 hover:text-ink-900">History</button>
+                    </div>
+                    <div class="space-y-4">
+                        ${state.pendingAction && !state.approvedActions.find(a => a.id === state.pendingAction.id) ? renderActionCard(state.pendingAction) : 
+                        `<div class="py-12 flex flex-col items-center justify-center text-ink-400 border border-dashed border-border rounded-xl">
+                            <span class="iconify w-8 h-8 mb-2 opacity-50" data-icon="lucide:check-circle"></span>
+                            <span class="text-sm">No pending actions required.</span>
+                        </div>`}
+                    </div>
+                </div>`;
+        }
+
+        function closeModal() {
+            document.getElementById('upload-modal').classList.add('hidden');
+            document.getElementById('upload-modal').classList.remove('flex');
+        }
+
+        function triggerUploadMock() {
+            const zone = document.querySelector('.upload-zone');
+            zone.innerHTML = `<div class="flex flex-col items-center justify-center animate-pulse"><span class="text-xs font-mono text-ink-500">Scanning file...</span></div>`;
+            setTimeout(() => {
+                document.getElementById('upload-modal').classList.remove('hidden');
+                document.getElementById('upload-modal').classList.add('flex');
+                zone.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center mb-3 text-ink-400"><span class="iconify w-5 h-5" data-icon="lucide:upload-cloud"></span></div>
+                    <p class="text-sm font-medium text-ink-900">Drag & drop files or browse</p>
+                    <p class="text-xs text-ink-400 mt-1">CSV, JSON, XLSX</p>
+                `;
+            }, 800);
+        }
+
+        async function handleQuery(query) {
+            if (!query.trim()) return;
+            const input = document.getElementById('command-input') || document.getElementById('chat-input-bar');
+            if(input) input.value = '';
+
+            state.isProcessing = true;
+            
+            const userMsg = { role: 'user', content: query };
+            state.history.push(userMsg);
+            saveToThread('user', query);
+
+            renderCommandView(document.getElementById('main-view'));
+
+            const chatContainer = document.getElementById('chat-container');
+            const tempId = 'temp-' + Date.now();
+            if (chatContainer) {
+                chatContainer.insertAdjacentHTML('beforeend', getPipelineHTML(tempId));
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            // --- NARRATIVE LOGIC ---
+            const lowerQ = query.toLowerCase();
+            const baseContext = ['Nairobi City Thunder', 'Season 24/25', 'Week 8'];
+            let response = {};
+
+            // Scenario: Boost Attendance
+            if (lowerQ.includes('attendance') || lowerQ.includes('warriors') || lowerQ.includes('boost')) {
+                response = {
+                    context: [...baseContext, 'Ticketing API', 'Engagement Engine'],
+                    content: `Ticketing data shows reservations are 12% below target, but <span class="font-medium text-ink-900">App Engagement is steady (+5%)</span>. <br><br>We can leverage this high engagement by pushing a gamified challenge to drive physical attendance.`,
+                    evidence: { type: 'attendance_drop' },
+                    action: {
+                        id: 'act_gamify_01',
+                        type: 'Flash Challenge',
+                        title: 'Thunder Strike Challenge',
+                        description: 'Push notification to all 14k active app users: "Attend Warriors game + Check-in = 500 Bonus XP + 10% Merch Coupon".',
+                        reward: '500 XP + Coupon',
+                        reach: 'Broad (14k)',
+                        impact: '+500-800 Tickets'
+                    }
+                };
+                state.pendingAction = response.action;
+            }
+            // Scenario: Identify Loyalty
+            else if (lowerQ.includes('loyalty') || lowerQ.includes('vip') || lowerQ.includes('fans')) {
+                 response = {
+                    context: [...baseContext, 'Engagement Engine', 'Leaderboard'],
+                    content: `I've analyzed the <span class="font-medium text-ink-900">Engagement Leaderboard</span>. We have 2,100 fans with an active streak > 3 games. <br><br>Top fan "J. Kamau" has 15,400 points. I recommend creating a "VIP Section Upgrade" reward for the top 50 leaderboard users.`,
+                };
+            }
+            else {
+                 response = {
+                    context: baseContext,
+                    content: "I'm analyzing the signals across ticketing, app engagement, and sales. Can you be more specific about the goal?",
+                };
+            }
+
+            runPipeline(tempId, () => {
+                state.isProcessing = false;
+                const tempEl = document.getElementById(tempId);
+                if(tempEl) tempEl.remove();
+                
+                const sysMsg = { role: 'system', ...response };
+                state.history.push(sysMsg);
+                saveToThread('system', response.content, response);
+
+                renderCommandView(document.getElementById('main-view'));
+            });
+        }
+
+        function approveAction(actionId) {
+            if (state.pendingAction && state.pendingAction.id === actionId) {
+                const action = state.pendingAction;
+                state.approvedActions.push(action);
+                
+                // Update Engagement Data Model to reflect the new challenge
+                if (action.type.includes('Challenge')) {
+                    state.engagement.challenges.unshift({
+                        id: 'ch_new_' + Date.now(),
+                        name: action.title,
+                        desc: 'Attend & Check-in',
+                        reward: '500 XP',
+                        status: 'Active',
+                        progress: 0
+                    });
+                }
+
+                renderMainView();
+                
+                setTimeout(() => {
+                    state.executedActions.push(action);
+                    // Force refresh to show outcomes in Timeline/Intelligence
+                    renderMainView();
+                }, 1500);
+            }
+        }
+
+        renderNav();
+        renderMainView();
+    </script>
+
+</body></html>

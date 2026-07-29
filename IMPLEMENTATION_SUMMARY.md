@@ -53,7 +53,7 @@ This is a **production-ready Next.js 16 frontend** for a multi-tenant RAG chatbo
 - ✅ Error handling and status indicators
 
 **Files:**
-- `app/chatbot/page.tsx` - Chat interface
+- `app/chat/[key]/page.tsx` - Public chat module (no login; history in the browser)
 
 #### 5. **Admin Dashboard**
 - ✅ Statistics (documents, chunks, conversations, messages)

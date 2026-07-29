@@ -2,16 +2,31 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+
+import { ConsoleShell } from '@/components/cerebros/console-shell'
+import {
+  Alert,
+  Btn,
+  Label,
+  Panel,
+  SectionTitle,
+  TextInput,
+  btnClass,
+} from '@/components/cerebros/ui'
 import { createClient } from '@/lib/supabase/client'
 import { describeError } from '@/lib/errors'
 import { generateApiKey } from '@/lib/api-key'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { ArrowLeft, Loader } from 'lucide-react'
 
-export default function CreateCompanyPage() {
+const PROVISIONING_STEPS = [
+  'A workspace key is generated and stored against the workspace',
+  'Documents you upload are chunked and embedded into an isolated index',
+  'A public chat link is issued for the workspace',
+  'Retrieval never crosses workspace boundaries',
+]
+
+export default function CreateWorkspacePage() {
   const router = useRouter()
   const supabase = createClient()
 
@@ -19,10 +34,11 @@ export default function CreateCompanyPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleCreateCompany = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleCreate = async (event: React.FormEvent) => {
+    event.preventDefault()
+
     if (!name.trim()) {
-      setError('Please enter a company name')
+      setError('Please enter a workspace name')
       return
     }
 
@@ -39,101 +55,93 @@ export default function CreateCompanyPage() {
         return
       }
 
-      const apiKey = generateApiKey()
-
       const { data, error: createError } = await supabase
         .from('companies')
-        .insert([
-          {
-            name: name.trim(),
-            api_key: apiKey,
-            owner_id: user.id,
-          },
-        ])
+        .insert([{ name: name.trim(), api_key: generateApiKey(), owner_id: user.id }])
         .select()
         .single()
 
       if (createError) throw createError
 
-      // Navigate to dashboard
       router.push(`/?company_id=${data.id}`)
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating company:', describeError(err))
-      setError(err.message || 'Failed to create company')
+      setError(describeError(err))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <Card className="p-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Create New Company</h1>
-          <p className="text-muted-foreground mb-6">
-            Set up a new company for managing your RAG chatbot
+    <ConsoleShell
+      active="workspaces"
+      eyebrow="RAG Console"
+      badge="PROVISIONING"
+      meta={<span>NEW WORKSPACE</span>}
+      actions={
+        <Link href="/" className={btnClass('outline', 'md')}>
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Link>
+      }
+    >
+      <div className="mx-auto w-full max-w-2xl animate-fade-in space-y-6 p-4 pb-12 sm:p-6 md:p-10 md:pb-20">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-ink-900">
+            Create Workspace
+          </h2>
+          <p className="mt-1 text-sm text-ink-500">
+            An isolated document index with its own key and public chat link.
           </p>
+        </div>
 
-          <form onSubmit={handleCreateCompany} className="space-y-6">
+        <Panel className="p-5 sm:p-6">
+          <form onSubmit={handleCreate} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Company Name
-              </label>
-              <Input
+              <Label htmlFor="workspace-name">Workspace Name</Label>
+              <TextInput
+                id="workspace-name"
                 type="text"
-                placeholder="e.g., Acme Corporation"
+                placeholder="e.g. Acme Corporation"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(event) => setName(event.target.value)}
                 disabled={loading}
-                className="w-full"
+                autoFocus
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                The name of your company. This will be displayed in all chats.
+              <p className="mt-2 text-[11px] text-ink-400">
+                Shown as the title on the workspace&apos;s public chat page.
               </p>
             </div>
 
-            {error && (
-              <div className="p-4 bg-destructive/10 border border-destructive/30 rounded text-sm text-destructive">
-                {error}
-              </div>
-            )}
+            {error ? <Alert>{error}</Alert> : null}
 
-            <Button type="submit" disabled={loading} className="w-full">
+            <Btn type="submit" disabled={loading} size="lg" className="w-full">
               {loading ? (
                 <>
-                  <Loader className="w-4 h-4 mr-2 animate-spin" />
-                  Creating...
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Provisioning…
                 </>
               ) : (
-                'Create Company'
+                'Create Workspace'
               )}
-            </Button>
+            </Btn>
           </form>
+        </Panel>
 
-          <div className="mt-8 p-4 bg-muted/50 rounded-lg">
-            <h3 className="font-semibold text-foreground mb-2">What happens next?</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
-              <li>✓ An API key will be automatically generated for your company</li>
-              <li>✓ You can upload documents and manage your chatbot context</li>
-              <li>✓ Your company data is isolated and secure</li>
-              <li>✓ Start chatting with your documents right away</li>
-            </ul>
-          </div>
-        </Card>
-      </main>
-    </div>
+        <Panel className="p-5 sm:p-6">
+          <SectionTitle>What happens next</SectionTitle>
+          <ul className="mt-4 space-y-3">
+            {PROVISIONING_STEPS.map((step) => (
+              <li key={step} className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded bg-brand/10 text-brand">
+                  <Check className="h-3 w-3" />
+                </span>
+                <span className="text-xs leading-relaxed text-ink-600">{step}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
+    </ConsoleShell>
   )
 }

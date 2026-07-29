@@ -1,39 +1,31 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import Link from 'next/link'
+import { MailCheck } from 'lucide-react'
 
-export default function Page() {
+import { AuthShell } from '@/components/cerebros/auth-shell'
+import { btnClass } from '@/components/cerebros/ui'
+
+export default function SignUpSuccessPage() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">
-                Thank you for signing up!
-              </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to
-                confirm your account before signing in.
-              </p>
-              <Link
-                href="/auth/login"
-                className="mt-4 inline-block text-sm underline underline-offset-4"
-              >
-                Back to login
-              </Link>
-            </CardContent>
-          </Card>
+    <AuthShell
+      title="Check your email"
+      subtitle="Confirm your address to finish setting up the account."
+      badge="PENDING"
+    >
+      <div className="space-y-5">
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-ink-50 p-4">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
+            <MailCheck className="h-4 w-4" />
+          </span>
+          <p className="text-xs leading-relaxed text-ink-600">
+            We sent a confirmation link to the address you signed up with. Open it to
+            activate the account, then sign in.
+          </p>
         </div>
+
+        <Link href="/auth/login" className={btnClass('primary', 'lg', 'w-full')}>
+          Back to sign in
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }

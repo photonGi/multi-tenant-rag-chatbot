@@ -133,7 +133,7 @@ app/page.tsx                    # Main dashboard
 app/auth/login/page.tsx         # Login form
 app/auth/sign-up/page.tsx       # Registration
 app/documents/page.tsx          # Document management
-app/chatbot/page.tsx            # Chat interface
+app/chat/[key]/page.tsx         # Public chat module (no login)
 app/admin/page.tsx              # Admin dashboard
 
 lib/supabase/client.ts          # Supabase browser client

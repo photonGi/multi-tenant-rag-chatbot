@@ -89,7 +89,7 @@ Your complete multi-tenant RAG chatbot frontend is built, tested, and ready to u
 - ✅ `app/auth/callback/route.ts` - Auth callback
 - ✅ `app/auth/error/page.tsx` - Error page
 - ✅ `app/documents/page.tsx` - Document management
-- ✅ `app/chatbot/page.tsx` - Chat interface
+- ✅ `app/chat/[key]/page.tsx` - Public chat module (no login)
 - ✅ `app/dashboard/company/create/page.tsx` - Create company
 - ✅ `app/admin/page.tsx` - Admin dashboard
 
@@ -225,9 +225,12 @@ You still need to:
 ### Protected Pages
 - ✅ `/` - Dashboard
 - ✅ `/documents?company_id=xxx` - Document management
-- ✅ `/chatbot?company_id=xxx` - Chat
 - ✅ `/dashboard/company/create` - Create company
 - ✅ `/admin?company_id=xxx` - Admin dashboard
+
+### Public Pages
+- ✅ `/chat/<api_key>?n=<workspace name>` - Shareable chat, no sign-in;
+  history is kept in the visitor's browser
 
 ### Try It Now
 ```bash

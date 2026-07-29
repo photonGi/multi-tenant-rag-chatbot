@@ -18,6 +18,14 @@ export interface IngestResponse {
 export interface ChatPayload {
   api_key: string;
   question: string;
+  /**
+   * Conversation scope for the workflow's memory node.
+   *
+   * Unique per conversation and per browser, and constant across every turn of
+   * a single conversation — so a memory node keyed on it accumulates that
+   * thread's context and never bleeds between threads or visitors.
+   */
+  memory_key?: string;
 }
 
 export interface ChatSource {

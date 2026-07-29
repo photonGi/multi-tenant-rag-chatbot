@@ -62,9 +62,29 @@ Return Response
 ```json
 {
   "api_key": "unique-api-key-for-company",
-  "question": "What are your projects?"
+  "question": "What are your projects?",
+  "memory_key": "3f2a…-visitor:8c17…-thread"
 }
 ```
+
+**`memory_key` — conversation scope for the memory node**
+
+Wire your memory node's session key to `{{ $json.body.memory_key }}`.
+
+It is `<visitorId>:<threadId>`:
+
+- **visitorId** — a UUID minted once per browser and kept in localStorage. The
+  public chat has no sign-in, so this is what "user" can mean here.
+- **threadId** — a UUID per conversation, minted when the chat starts.
+
+So the key is **constant across every turn of one conversation** (the memory
+buffer accumulates) and **distinct for every other conversation and every other
+visitor** (buffers never bleed into each other). It survives page reloads. It
+does not survive the visitor clearing site data — but neither does their chat
+history, so the two stay consistent.
+
+Threads started before this field existed derive the same key on the fly, so
+older conversations keep working.
 
 **Expected Response:**
 ```json
@@ -357,9 +377,13 @@ curl -X POST https://n8n.sysmatixx.com/webhook/chat \
   -H "Content-Type: application/json" \
   -d '{
     "api_key": "test-key",
-    "question": "What is the test content?"
+    "question": "What is the test content?",
+    "memory_key": "test-visitor:test-thread"
   }'
 ```
+
+Re-send with the same `memory_key` to check the memory node is carrying context
+between turns, and with a different one to check it is not.
 
 Expected:
 ```json
@@ -413,12 +437,16 @@ const result = await n8nClient.uploadDocument({
 
 ### Chat Query:
 ```typescript
-// From app/chatbot/page.tsx
+// From app/chat/[key]/chat-module.tsx
 const response = await n8nClient.chat({
-  api_key: company.api_key,
-  question: userMessage,
+  api_key: chatKey,
+  question,
+  memory_key: memoryKeyOf(thread), // <visitorId>:<threadId>
 })
 ```
+
+The key itself is built in `lib/chat/storage.ts` (`buildMemoryKey`,
+`memoryKeyOf`, `getVisitorId`).
 
 Both implemented in `lib/n8n/client.ts`
 

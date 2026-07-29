@@ -1,7 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/** The public chat module. Shared links must resolve without a session. */
+function isPublicChat(pathname: string): boolean {
+  return pathname === '/chat' || pathname.startsWith('/chat/')
+}
+
 export async function updateSession(request: NextRequest) {
+  // Short-circuit before the Supabase client exists. The chat module is a
+  // standalone entity: it has no session to refresh, and putting an auth
+  // round-trip in front of a public link would only add latency to it.
+  if (isPublicChat(request.nextUrl.pathname)) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -42,8 +54,8 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Routes that require an authenticated session. Everything else (the auth
-  // pages themselves, the OAuth callback, the error page) stays public.
-  const protectedRoutes = ['/documents', '/chatbot', '/admin', '/dashboard']
+  // pages themselves, the OAuth callback, the error page, /chat) stays public.
+  const protectedRoutes = ['/documents', '/admin', '/dashboard']
   const isProtectedRoute =
     request.nextUrl.pathname === '/' ||
     protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))

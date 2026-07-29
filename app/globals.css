@@ -2,162 +2,314 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-@custom-variant dark (&:is(.dark *));
+/* =============================================================================
+   CerebrOS design system — see Design.md
+   Grayscale foundation, amber reserved for intelligence states and primary CTAs.
+   Light only: the spec defines no dark palette.
+   ============================================================================= */
 
-@theme inline {
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
+@theme {
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-border: #e4e4e7;
 
-:root {
-  color-scheme: light;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  /* ── Brand — intelligence states only ─────────────────────────────────── */
+  --color-brand: #f59e0b;
 
-.dark {
-  color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+  /* ── Ink scale — metadata through primary headers ─────────────────────── */
+  --color-ink-950: #09090b;
+  --color-ink-900: #18181b;
+  --color-ink-800: #27272a;
+  --color-ink-700: #3f3f46;
+  --color-ink-600: #52525b;
+  --color-ink-500: #71717a;
+  --color-ink-400: #a1a1aa;
+  --color-ink-300: #d4d4d8;
+  --color-ink-200: #e4e4e7;
+  --color-ink-100: #f4f4f5;
+  --color-ink-50: #fafafa;
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    color-scheme: dark;
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+  /* ── Semantic ─────────────────────────────────────────────────────────── */
+  --color-success: #10b981;
+  --color-alert: #ef4444;
+  --color-warning: #f59e0b;
+  --color-purple: #8b5cf6;
+
+  /* ── Typography — mono is for anything derived from a database ────────── */
+  --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace;
+
+  /* ── Elevation ────────────────────────────────────────────────────────── */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.02);
+  --shadow-elevated:
+    0 8px 16px -4px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --animate-slide-up: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fadeIn 0.3s ease-out forwards;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-blink: blink 1s step-end infinite;
+
+  /* Message entrance. The slight overshoot is what reads as "settling into
+     place" rather than "appearing" — the iMessage feel. `backwards` holds the
+     start frame so nothing flashes at full size before the run begins. */
+  --animate-bubble-in: bubbleIn 460ms cubic-bezier(0.32, 1.34, 0.38, 1) backwards;
+
+  @keyframes bubbleIn {
+    0% {
+      opacity: 0;
+      transform: translateY(14px) scale(0.92);
+    }
+    60% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
+
+  @keyframes blockIn {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes dotPulse {
+    0%,
+    60%,
+    100% {
+      opacity: 0.3;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    0% {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* ── shadcn semantic aliases, remapped onto the CerebrOS palette so any
+        components/ui primitive still renders inside the system ─────────── */
+  --color-background: #fafafa;
+  --color-foreground: #18181b;
+  --color-card: #ffffff;
+  --color-card-foreground: #18181b;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #18181b;
+  --color-primary: #18181b;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f4f4f5;
+  --color-secondary-foreground: #18181b;
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #71717a;
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+  --color-destructive: #ef4444;
+  --color-input: #e4e4e7;
+  --color-ring: #d4d4d8;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
   }
+
+  html {
+    /* Mono digits and long ids must never widen the page on a phone. */
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--color-canvas);
+    color: var(--color-ink-900);
+    overflow-x: hidden;
+  }
+
+  /* Momentum scrolling inside the transcript and page bodies. */
+  [class*='overflow-y-auto'] {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Grey flash on tap reads as jitter; the components carry their own
+     active: states instead. */
+  a,
+  button,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prefer a clear background shift or ring over a browser default outline. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink-300);
+    outline-offset: 2px;
+  }
+}
+
+/* Hairline scrollbars — the spec favours light 1px lines over heavy chrome. */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e4e4e7;
+  border-radius: 4px;
+}
+
+/* Tooltips for icon-only rail navigation (accessibility requirement). */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #18181b;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 60;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Manual ingestion drop target. */
+.upload-zone:hover {
+  border-color: #f59e0b;
+  background-color: #fef3c7;
+}
+
+/* -----------------------------------------------------------------------------
+   Answer reveal.
+
+   A finished answer arrives from the workflow in one piece. Dropping the whole
+   wall of markdown in at once is what reads as "spat out", so the top-level
+   blocks cascade in instead — paragraph, then list, then table — which gives the
+   arrival a direction without pretending to stream tokens we never received.
+   Only direct children animate, so a bullet list settles as one group.
+   -------------------------------------------------------------------------- */
+.md-reveal > * {
+  animation: blockIn 460ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.md-reveal > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+.md-reveal > *:nth-child(2) {
+  animation-delay: 110ms;
+}
+.md-reveal > *:nth-child(3) {
+  animation-delay: 180ms;
+}
+.md-reveal > *:nth-child(4) {
+  animation-delay: 250ms;
+}
+.md-reveal > *:nth-child(5) {
+  animation-delay: 320ms;
+}
+.md-reveal > *:nth-child(6) {
+  animation-delay: 390ms;
+}
+.md-reveal > *:nth-child(7) {
+  animation-delay: 460ms;
+}
+.md-reveal > *:nth-child(8) {
+  animation-delay: 530ms;
+}
+.md-reveal > *:nth-child(9) {
+  animation-delay: 600ms;
+}
+.md-reveal > *:nth-child(10) {
+  animation-delay: 670ms;
+}
+/* Long answers stop staggering rather than making the reader wait. */
+.md-reveal > *:nth-child(n + 11) {
+  animation-delay: 740ms;
+}
+
+/* Typing indicator dots. */
+.typing-dot {
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+
+/* Mobile bottom navigation clears the home indicator. */
+@utility pb-safe-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* The composer sits flush to the bottom edge. On notched phones the home
+   indicator would otherwise rest on top of it. */
+@utility pb-safe {
+  padding-bottom: calc(--spacing(4) + env(safe-area-inset-bottom, 0px));
+
+  @variant sm {
+    padding-bottom: calc(--spacing(6) + env(safe-area-inset-bottom, 0px));
+  }
+
+  @variant md {
+    padding-bottom: calc(--spacing(8) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Motion preferences. Entrance choreography is decoration; anyone who has asked
+   the OS to stop moving things gets the end state immediately.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

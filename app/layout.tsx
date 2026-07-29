@@ -1,19 +1,34 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
-  title: 'RAG Chatbot - Multi-Tenant AI Assistant',
+  title: 'AI-RAG Chatbots',
   description: 'Enterprise RAG chatbot platform with document context and company isolation',
-  generator: 'v0.app',
+  generator: 'Shoaib Akhter',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/chatbot.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/chatbot.png',
         media: '(prefers-color-scheme: dark)',
       },
       {
@@ -21,16 +36,18 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/chatbot.png',
   },
 }
 
+// The CerebrOS spec defines a single light palette — no dark variant.
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
+  colorScheme: 'light',
+  themeColor: '#fafafa',
+  width: 'device-width',
+  initialScale: 1,
+  // No maximumScale / userScalable lock: pinch-zoom stays available.
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -39,8 +56,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
-      <body className="antialiased">
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
+    >
+      <body className="bg-canvas font-sans text-ink-900 selection:bg-brand/20">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
