@@ -1,4 +1,4 @@
-const N8N_BASE_URL = 'https://n8n.sysmatixx.com/webhook-test';
+const N8N_BASE_URL = 'https://n8n.sysmatixx.com/webhook';
 
 /**
  * What a workspace is being given to index.
