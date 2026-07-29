@@ -175,25 +175,53 @@ function DocumentsPageContent() {
     }
   }
 
-  const handleDelete = async (docId: string) => {
-    if (!confirm('Delete this document and its indexed chunks?')) return
+  /**
+   * Removes a document and the chunks it put in the index.
+   *
+   * Chunks are matched on (company_id, source_name) — the pair
+   * idx_chunks_company_source exists for — not on document_id. The n8n ingest
+   * workflow writes the chunks and only ever receives the api key, source name
+   * and label, so it leaves document_id NULL; filtering on it matched nothing
+   * and every delete silently orphaned the whole set.
+   *
+   * That mattered because match_documents() filters on company_id alone, so
+   * orphaned chunks stayed retrievable and a deleted document kept answering
+   * questions. Deleting the documents row afterwards also cascades to any chunk
+   * that does carry a document_id.
+   */
+  const handleDelete = async (doc: DocumentRow) => {
+    if (!companyId) return
+    if (
+      !confirm(`Delete "${doc.source_name}" and remove its chunks from the index?`)
+    ) {
+      return
+    }
 
     try {
-      await supabase.from('document_chunks').delete().eq('document_id', docId)
+      const { data: removedChunks, error: chunkError } = await supabase
+        .from('document_chunks')
+        .delete()
+        .eq('company_id', companyId)
+        .eq('source_name', doc.source_name)
+        .select('id')
+
+      if (chunkError) throw chunkError
 
       const { error: deleteError } = await supabase
         .from('documents')
         .delete()
-        .eq('id', docId)
+        .eq('id', doc.id)
 
       if (deleteError) throw deleteError
 
-      setDocuments((current) => current.filter((doc) => doc.id !== docId))
-      setSuccess('Document deleted')
-      setTimeout(() => setSuccess(''), 3000)
+      setDocuments((current) => current.filter((item) => item.id !== doc.id))
+      setSuccess(
+        `Deleted ${doc.source_name} — ${removedChunks?.length ?? 0} chunks removed from the index`,
+      )
+      setTimeout(() => setSuccess(''), 4000)
     } catch (err) {
       console.error('Delete error:', describeError(err))
-      setError('Failed to delete document')
+      setError(describeError(err))
     }
   }
 
@@ -408,13 +436,16 @@ function DocumentsPageContent() {
                         </div>
                       </div>
 
+                      {/* Always visible, not hover-revealed: there is no hover
+                          on touch, and this is the only way to remove a
+                          document. */}
                       <button
                         type="button"
-                        onClick={() => handleDelete(doc.id)}
+                        onClick={() => handleDelete(doc)}
                         aria-label={`Delete ${doc.source_name}`}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-ink-300 opacity-0 transition-all group-hover:opacity-100 hover:bg-alert/10 hover:text-alert focus-visible:opacity-100"
+                        className="-m-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-300 transition-all hover:bg-alert/10 hover:text-alert active:bg-alert/10"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </Panel>
