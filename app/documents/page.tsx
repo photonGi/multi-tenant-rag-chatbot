@@ -133,9 +133,7 @@ function DocumentsPageContent() {
   const [documents, setDocuments] = useState<DocumentRow[]>([])
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
-  // Reading a page happens before anything reaches n8n and can take seconds, so
-  // it gets its own stage rather than leaving the form looking frozen.
-  const [stage, setStage] = useState<'idle' | 'reading' | 'ingesting'>('idle')
+  const [uploading, setUploading] = useState(false)
   const [mode, setMode] = useState<SourceMode>('file')
   const [filter, setFilter] = useState<SourceMode | 'all'>('all')
   const [file, setFile] = useState<File | null>(null)
@@ -222,32 +220,13 @@ function DocumentsPageContent() {
     const normalised = normaliseUrl(url)
     if (!normalised) return { ok: false, error: 'Enter a valid website address' }
 
-    // The workflow ingests text and files, not addresses, and the browser
-    // cannot fetch a third-party page itself (CORS). The server route reads it
-    // and hands back the readable text.
-    const response = await fetch('/api/extract-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: normalised }),
-    })
-
-    const extracted = (await response.json()) as {
-      text?: string
-      title?: string | null
-      error?: string
-    }
-
-    if (!response.ok || !extracted.text) {
-      return { ok: false, error: extracted.error ?? 'That page could not be read.' }
-    }
-
+    // The workflow fetches and extracts the page itself, so only the address
+    // goes across.
     return {
       ok: true,
       source_name: normalised,
-      source: { kind: 'url', url: normalised, content: extracted.text },
-      preview: extracted.title
-        ? `${extracted.title} — ${extracted.text.slice(0, 160)}`
-        : extracted.text.slice(0, 200),
+      source: { kind: 'url', url: normalised },
+      preview: normalised,
     }
   }
 
@@ -263,17 +242,13 @@ function DocumentsPageContent() {
     setError('')
     setSuccess('')
 
-    // Reading the page is a real round trip, so the form locks before it runs.
-    setStage(mode === 'url' ? 'reading' : 'ingesting')
-
     const submission = await buildSubmission(trimmedLabel)
     if (!submission.ok) {
       setError(submission.error)
-      setStage('idle')
       return
     }
 
-    setStage('ingesting')
+    setUploading(true)
 
     try {
       // Files go to n8n intact so its own extraction nodes handle them (PDFs in
@@ -318,7 +293,7 @@ function DocumentsPageContent() {
       console.error('Upload error:', describeError(err))
       setError(describeError(err))
     } finally {
-      setStage('idle')
+      setUploading(false)
     }
   }
 
@@ -399,7 +374,6 @@ function DocumentsPageContent() {
       ? documents.length
       : documents.filter((doc) => classifySource(doc.source_name) === id).length
 
-  const uploading = stage !== 'idle'
   const modeHasInput =
     (mode === 'file' && file !== null) ||
     (mode === 'text' && text.trim().length > 0) ||
@@ -635,7 +609,7 @@ function DocumentsPageContent() {
                 {uploading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {stage === 'reading' ? 'Reading page…' : 'Ingesting…'}
+                    Ingesting…
                   </>
                 ) : (
                   <>

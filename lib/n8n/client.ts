@@ -10,10 +10,8 @@ const N8N_BASE_URL = 'https://n8n.sysmatixx.com/webhook';
 export type IngestSource =
   | { kind: 'file'; file: File }
   | { kind: 'text'; content: string }
-  // A URL arrives already reduced to text by /api/extract-url, because the
-  // workflow ingests text and files, not addresses. The address itself rides
-  // along as provenance.
-  | { kind: 'url'; url: string; content: string };
+  // The workflow fetches the page itself; only the address is sent.
+  | { kind: 'url'; url: string };
 
 export interface DocumentUploadPayload {
   api_key: string;
@@ -145,19 +143,21 @@ export class N8nClient {
     form.append('label', payload.label);
     form.append('source_type', payload.source.kind);
 
-    if (payload.source.kind === 'file') {
-      form.append('file', payload.source.file, payload.source_name);
-    } else {
-      // Sent under both names on purpose. The workflow's validation reports
-      // "No text or file content was provided", and the docs describe
-      // `content` — so which field it reads is not settled. Drop whichever is
-      // unused once the workflow confirms it.
-      form.append('text', payload.source.content);
-      form.append('content', payload.source.content);
-
-      if (payload.source.kind === 'url') {
+    switch (payload.source.kind) {
+      case 'file':
+        form.append('file', payload.source.file, payload.source_name);
+        break;
+      case 'text':
+        // Sent under both names on purpose. The workflow's validation reports
+        // "No text or file content was provided", and the docs describe
+        // `content` — so which field it reads is not settled. Drop whichever is
+        // unused once the workflow confirms it.
+        form.append('text', payload.source.content);
+        form.append('content', payload.source.content);
+        break;
+      case 'url':
         form.append('source_url', payload.source.url);
-      }
+        break;
     }
 
     const response = await fetch(`${this.baseUrl}/ingest`, {
