@@ -28,8 +28,9 @@ import {
   type ChatMessage,
   type ChatThread,
 } from '@/lib/chat/storage'
+import { ChatLinkUnavailable } from '@/components/chat/link-unavailable'
 import { describeError } from '@/lib/errors'
-import { n8nClient } from '@/lib/n8n/client'
+import { N8nError, n8nClient } from '@/lib/n8n/client'
 import { cn } from '@/lib/utils'
 
 type View = 'chat' | 'history'
@@ -70,6 +71,11 @@ export function ChatModule({
   const [pending, setPending] = useState(false)
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState(false)
+
+  // Set once the workflow refuses the key — the workspace was deleted or its
+  // link regenerated. The shape of the key is already known good by this point
+  // (page.tsx checks it), so this can only mean the key no longer resolves.
+  const [revoked, setRevoked] = useState(false)
 
   // Ids of messages that arrived during this session. Only these animate in —
   // replaying the whole cascade every time a thread is resumed from history
@@ -227,6 +233,15 @@ export function ChatModule({
           sources: response.sources?.length ? response.sources : undefined,
         })
       } catch (error) {
+        // A refused key is terminal — every later turn would fail the same way,
+        // so the page swaps to the unavailable state instead of stacking error
+        // bubbles. Anything else (a 500, a dropped connection, an inactive
+        // workflow) is transient and stays retryable in place.
+        if (error instanceof N8nError && error.isRejectedKey) {
+          setRevoked(true)
+          return
+        }
+
         appendMessage(threadId, {
           id: newId(),
           role: 'assistant',
@@ -317,6 +332,11 @@ export function ChatModule({
   }, [ordered, query])
 
   const title = workspaceName || 'Document Assistant'
+
+  // Stored history is left untouched: if the key turns out to have been
+  // refused in error, a reload brings the conversation back rather than
+  // having quietly discarded it.
+  if (revoked) return <ChatLinkUnavailable reason="revoked" />
 
   return (
     // h-dvh, not h-screen: on mobile the collapsing URL bar makes 100vh taller

@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 
+import { ChatLinkUnavailable } from '@/components/chat/link-unavailable'
+import { isWellFormedChatKey } from '@/lib/chat/link'
+
 import { ChatModule } from './chat-module'
 
 type PageProps = {
@@ -14,12 +17,21 @@ function displayName(value: string | string[] | undefined): string | null {
 }
 
 export async function generateMetadata({
+  params,
   searchParams,
 }: PageProps): Promise<Metadata> {
+  const { key } = await params
   const name = displayName((await searchParams).n)
 
+  // A link that cannot resolve should not put a workspace name in the tab —
+  // the `n` parameter is caller-supplied and authorises nothing.
+  let title = 'Chat link unavailable'
+  if (isWellFormedChatKey(key)) {
+    title = name ? `${name} · Assistant` : 'Document Assistant'
+  }
+
   return {
-    title: name ? `${name} · Assistant` : 'Document Assistant',
+    title,
     // Share links are meant to be handed out directly, not crawled.
     robots: { index: false, follow: false },
   }
@@ -32,6 +44,13 @@ export async function generateMetadata({
 export default async function PublicChatPage({ params, searchParams }: PageProps) {
   const { key } = await params
   const name = displayName((await searchParams).n)
+
+  // A key of the wrong shape cannot match any workspace, so this is settled
+  // here rather than in the client — a truncated link never ships the chat
+  // bundle and never touches the network.
+  if (!isWellFormedChatKey(key)) {
+    return <ChatLinkUnavailable reason="malformed" />
+  }
 
   return <ChatModule chatKey={key} workspaceName={name} />
 }
