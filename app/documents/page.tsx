@@ -30,6 +30,12 @@ import { publicChatPath } from '@/lib/chat/link'
 import { createClient } from '@/lib/supabase/client'
 import { describeError } from '@/lib/errors'
 import { n8nClient, type IngestSource } from '@/lib/n8n/client'
+import {
+  SOURCE_BADGE,
+  SOURCE_NOUN,
+  classifySource,
+  type SourceKind,
+} from '@/lib/source-kind'
 import { cn } from '@/lib/utils'
 
 interface Company {
@@ -49,8 +55,8 @@ interface DocumentRow {
 
 const ACCEPTED = '.txt,.pdf,.docx,.doc,.png,.jpg,.jpeg'
 
-/** A file is one way to give a workspace context, not the only one. */
-type SourceMode = 'file' | 'text' | 'url'
+/** The ingestion mode and the stored source kind are the same three things. */
+type SourceMode = SourceKind
 
 type Submission =
   | { ok: true; source_name: string; source: IngestSource; preview: string | null }
@@ -60,6 +66,19 @@ const SOURCE_MODES: { id: SourceMode; label: string; icon: LucideIcon }[] = [
   { id: 'file', label: 'File', icon: CloudUpload },
   { id: 'text', label: 'Text', icon: Type },
   { id: 'url', label: 'Website', icon: Globe },
+]
+
+const SOURCE_ICON: Record<SourceMode, LucideIcon> = {
+  file: FileText,
+  text: Type,
+  url: Globe,
+}
+
+const FILTERS: { id: SourceMode | 'all'; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'file', label: 'Files' },
+  { id: 'text', label: 'Text' },
+  { id: 'url', label: 'Websites' },
 ]
 
 /**
@@ -118,6 +137,7 @@ function DocumentsPageContent() {
   // it gets its own stage rather than leaving the form looking frozen.
   const [stage, setStage] = useState<'idle' | 'reading' | 'ingesting'>('idle')
   const [mode, setMode] = useState<SourceMode>('file')
+  const [filter, setFilter] = useState<SourceMode | 'all'>('all')
   const [file, setFile] = useState<File | null>(null)
   const [text, setText] = useState('')
   const [url, setUrl] = useState('')
@@ -318,8 +338,14 @@ function DocumentsPageContent() {
    */
   const handleDelete = async (doc: DocumentRow) => {
     if (!companyId) return
+
+    // Chunks are keyed on source_name, so this path is identical for a file, a
+    // text snippet and a website — only the wording changes.
+    const noun = SOURCE_NOUN[classifySource(doc.source_name)]
     if (
-      !confirm(`Delete "${doc.source_name}" and remove its chunks from the index?`)
+      !confirm(
+        `Delete this ${noun} ("${doc.source_name}") and remove its chunks from the index?`,
+      )
     ) {
       return
     }
@@ -356,6 +382,23 @@ function DocumentsPageContent() {
 
   const totalChunks = documents.reduce((sum, doc) => sum + (doc.chunk_count ?? 0), 0)
 
+  // Metrics follow the active filter, so "chunks indexed" answers the question
+  // actually being asked — how much of the index is websites, or text, or files.
+  const visibleDocuments =
+    filter === 'all'
+      ? documents
+      : documents.filter((doc) => classifySource(doc.source_name) === filter)
+
+  const visibleChunks = visibleDocuments.reduce(
+    (sum, doc) => sum + (doc.chunk_count ?? 0),
+    0,
+  )
+
+  const countFor = (id: SourceMode | 'all') =>
+    id === 'all'
+      ? documents.length
+      : documents.filter((doc) => classifySource(doc.source_name) === id).length
+
   const uploading = stage !== 'idle'
   const modeHasInput =
     (mode === 'file' && file !== null) ||
@@ -369,10 +412,10 @@ function DocumentsPageContent() {
       companyId={companyId}
       chatHref={company ? publicChatPath(company.api_key, company.name) : null}
       eyebrow={company?.name ?? 'Workspace'}
-      badge="DOCUMENTS"
+      badge="SOURCES"
       meta={
         <>
-          <span>{documents.length} DOCUMENTS</span>
+          <span>{documents.length} SOURCES</span>
           <span className="text-ink-300">•</span>
           <span>{totalChunks.toLocaleString()} CHUNKS INDEXED</span>
         </>
@@ -386,26 +429,33 @@ function DocumentsPageContent() {
     >
       <div className="mx-auto w-full max-w-6xl animate-fade-in space-y-6 p-4 pb-12 sm:space-y-8 sm:p-6 md:p-10 md:pb-20">
         <PageHeading
-          title="Documents"
-          subtitle="Ingestion and index coverage for this workspace."
+          title="Sources"
+          subtitle="Files, pasted text and websites feeding this workspace's index."
         />
 
         {error ? <Alert>{error}</Alert> : null}
         {success ? <Alert tone="success">{success}</Alert> : null}
 
-        {/* ── Index coverage ──────────────────────────────────────────────── */}
+        {/* ── Index coverage — follows the active filter ──────────────────── */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
           <Panel className="p-5">
-            <SectionTitle className="text-ink-500">Documents</SectionTitle>
+            <SectionTitle className="text-ink-500">
+              {filter === 'all' ? 'Sources' : FILTERS.find((f) => f.id === filter)?.label}
+            </SectionTitle>
             <div className="mt-2 text-3xl font-light text-ink-900">
-              {documents.length}
+              {visibleDocuments.length}
             </div>
           </Panel>
           <Panel className="p-5">
             <SectionTitle className="text-ink-500">Chunks Indexed</SectionTitle>
             <div className="mt-2 text-3xl font-light text-ink-900">
-              {totalChunks.toLocaleString()}
+              {visibleChunks.toLocaleString()}
             </div>
+            {filter !== 'all' ? (
+              <div className="mt-1 font-mono text-[10px] text-ink-400">
+                OF {totalChunks.toLocaleString()} TOTAL
+              </div>
+            ) : null}
           </Panel>
           <Panel className="p-5">
             <SectionTitle className="text-ink-500">Embedding Model</SectionTitle>
@@ -597,35 +647,82 @@ function DocumentsPageContent() {
             </form>
           </Panel>
 
-          {/* ── Indexed documents ─────────────────────────────────────────── */}
+          {/* ── Indexed sources ───────────────────────────────────────────── */}
           <div className="space-y-3 lg:col-span-7">
-            <SectionTitle className="text-ink-500">
-              Indexed Documents ({documents.length})
-            </SectionTitle>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <SectionTitle className="text-ink-500">Indexed Sources</SectionTitle>
 
-            {documents.length === 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {FILTERS.map(({ id, label: filterLabel }) => {
+                  const count = countFor(id)
+
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setFilter(id)}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
+                        filter === id
+                          ? 'bg-ink-900 text-surface'
+                          : 'text-ink-500 hover:bg-ink-100 hover:text-ink-900',
+                      )}
+                    >
+                      {filterLabel}
+                      <span
+                        className={cn(
+                          'font-mono text-[10px]',
+                          filter === id ? 'text-surface/60' : 'text-ink-400',
+                        )}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {visibleDocuments.length === 0 ? (
               <EmptyState
                 icon={<FileText className="h-10 w-10" />}
-                title="Nothing indexed yet."
-                hint="Upload a document to build this workspace's index."
+                title={
+                  documents.length === 0
+                    ? 'Nothing indexed yet.'
+                    : 'Nothing of this kind yet.'
+                }
+                hint={
+                  documents.length === 0
+                    ? 'Add a file, paste text, or point it at a website.'
+                    : 'Switch filters to see the rest of the index.'
+                }
               />
             ) : (
               <div className="space-y-3">
-                {documents.map((doc) => (
+                {visibleDocuments.map((doc) => (
                   <Panel
                     key={doc.id}
                     className="group p-4 transition-all hover:border-ink-300 hover:shadow-elevated"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex min-w-0 flex-1 items-start gap-3">
-                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border bg-ink-50 text-ink-400">
-                          <FileText className="h-4 w-4" />
-                        </div>
+                        {(() => {
+                          const kind = classifySource(doc.source_name)
+                          const Icon = SOURCE_ICON[kind]
+                          return (
+                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border bg-ink-50 text-ink-400">
+                              <Icon className="h-4 w-4" />
+                            </div>
+                          )
+                        })()}
                         <div className="min-w-0">
                           <h3 className="truncate text-sm font-medium text-ink-900">
                             {doc.source_name}
                           </h3>
                           <div className="mt-1.5 flex flex-wrap items-center gap-2 font-mono text-[10px] text-ink-400">
+                            <span className="rounded border border-border bg-ink-50 px-1.5 py-0.5 text-ink-500">
+                              {SOURCE_BADGE[classifySource(doc.source_name)]}
+                            </span>
                             {doc.label ? (
                               <span className="rounded border border-border bg-ink-50 px-1.5 py-0.5">
                                 {doc.label.toUpperCase()}
