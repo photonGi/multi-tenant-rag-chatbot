@@ -1,6 +1,6 @@
 {
   "name": "@shoaibakhter.sysmatixx/chat-widget",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Embed a Multi-Tenant Chatbot RAG assistant into any website. Framework wrappers around the widget loader.",
   "license": "MIT",
   "type": "module",

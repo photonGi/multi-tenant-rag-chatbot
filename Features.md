@@ -118,9 +118,15 @@ Full detail in [WIDGET.md](./WIDGET.md).
 ### Theming
 
 Held server-side, so the snippet is pasted once and never touched again.
-Accent colour (with an automatically contrast-correct foreground), left/right
-position, offsets, title, subtitle, opening message, launcher label, up to four
-starter questions, optional auto-open delay, and a branding toggle.
+
+| Control | Notes |
+|---|---|
+| Accent colour | Header, launcher and send button. Its foreground is derived so text stays legible on any accent. |
+| Background colour | The whole neutral ramp — bubbles, borders, muted text — is blended from this and the text colour, so a dark value yields a coherent dark panel rather than dark-on-light wreckage. |
+| Text colour | Auto by default (black or white, whichever reads better). Overridable for brands that need a specific ink. |
+| Contrast warning | The editor computes the WCAG ratio live and warns below 4.5:1 — including the mid-tone case, where *no* automatic foreground can clear AA. It reports the limit rather than pretending to fix it. |
+| Live preview | A miniature panel and launcher render from the unsaved draft, marked **Unsaved** until written. It runs the same `derivePalette` the widget does, so the colours shown are the real arithmetic, not an approximation. |
+| Layout and copy | Left/right position, offsets, title, subtitle, opening message, launcher label, up to four starter questions, optional auto-open delay, branding toggle. |
 
 ## 7. Security
 

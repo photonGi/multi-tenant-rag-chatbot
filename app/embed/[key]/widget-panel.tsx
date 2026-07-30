@@ -22,7 +22,12 @@ import {
   type LoaderMessage,
   type PanelMessageBody,
 } from '@/lib/widget/protocol'
-import { DEFAULT_THEME, resolveTheme, type WidgetTheme } from '@/lib/widget/theme'
+import {
+  DEFAULT_THEME,
+  derivePalette,
+  resolveTheme,
+  type WidgetTheme,
+} from '@/lib/widget/theme'
 
 type Phase = 'connecting' | 'ready' | 'standalone'
 
@@ -340,6 +345,10 @@ export function WidgetPanel({ publicKey }: { publicKey: string | null }) {
         {
           '--w-accent': theme.accent,
           '--w-accent-fg': theme.accentForeground,
+          // Overrides Tailwind's theme variables for this subtree. Every
+          // utility compiles to `var(--color-*)`, so this re-themes the shared
+          // MessageList and Thinking components without touching them.
+          ...derivePalette(theme),
         } as React.CSSProperties
       }
     >

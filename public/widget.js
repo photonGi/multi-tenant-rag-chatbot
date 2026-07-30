@@ -204,7 +204,7 @@
         order: ${side === 'left' ? 1 : 0};
         padding: 8px 14px;
         border-radius: 999px;
-        background: #fff; color: #18181b;
+        background: ${theme.surface}; color: ${theme.surfaceForeground};
         font-size: 13px; font-weight: 500; white-space: nowrap;
         box-shadow: 0 4px 16px rgba(0,0,0,.12);
       }
@@ -230,7 +230,9 @@
         height: min(640px, calc(100vh - ${panelBottom + 24}px));
         border-radius: 16px;
         overflow: hidden;
-        background: #fff;
+        /* Matches the panel's own background so a dark theme does not flash
+           white in the moment before the iframe paints. */
+        background: ${theme.surface};
         box-shadow: 0 12px 48px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.05);
         opacity: 0; visibility: hidden;
         transform: translateY(12px) scale(.98);

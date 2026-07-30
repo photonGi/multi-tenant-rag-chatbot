@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Check,
   ChevronDown,
@@ -20,12 +20,15 @@ import { formatRelative } from '@/lib/chat/storage'
 import { displayHost, normalizeOriginPattern } from '@/lib/widget/origins'
 import {
   DEFAULT_THEME,
+  contrastRatio,
+  hasReadableText,
   resolveTheme,
   serializeTheme,
   type WidgetTheme,
 } from '@/lib/widget/theme'
 
 import { InstallSnippet } from './install-snippet'
+import { LauncherPreview, ThemePreview } from './theme-preview'
 import type { WidgetSite } from './types'
 
 type Section = 'install' | 'origins' | 'appearance' | null
@@ -261,6 +264,31 @@ function StatusPill({ site }: Readonly<{ site: WidgetSite }>) {
   return <Pill tone="brand">AWAITING INSTALL</Pill>
 }
 
+/** Swatch plus hex field, kept in step. Used for every colour in the editor. */
+function ColorField({
+  id,
+  value,
+  onChange,
+}: Readonly<{ id: string; value: string; onChange: (value: string) => void }>) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        id={id}
+        type="color"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-border bg-surface p-1"
+      />
+      <TextInput
+        value={value}
+        aria-label={`${id} hex value`}
+        onChange={(event) => onChange(event.target.value)}
+        className="font-mono text-xs"
+      />
+    </div>
+  )
+}
+
 function SectionTab({
   icon,
   label,
@@ -413,6 +441,18 @@ function AppearanceEditor({
     setSaved(false)
   }
 
+  // Re-resolved on every keystroke so the preview shows exactly what would be
+  // stored — including the derived foreground and the clamping of out-of-range
+  // values, which is the part a raw draft would misrepresent.
+  const preview = useMemo(() => resolveTheme(draft), [draft])
+  const readable = hasReadableText(preview)
+  const dirty = useMemo(
+    () =>
+      JSON.stringify(serializeTheme(preview)) !==
+      JSON.stringify(serializeTheme(resolveTheme(site.theme))),
+    [preview, site.theme],
+  )
+
   const save = () =>
     run(async () => {
       // Normalised before it is stored, so the column can never hold a value
@@ -431,23 +471,102 @@ function AppearanceEditor({
         has to touch the website again.
       </p>
 
+      {/* ── Live preview ─────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-border bg-ink-50 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="font-mono text-[10px] tracking-wider text-ink-400 uppercase">
+            Preview
+          </span>
+          {dirty ? (
+            <Pill tone="brand">UNSAVED</Pill>
+          ) : (
+            <span className="text-[10px] text-ink-400">Matches what is live</span>
+          )}
+        </div>
+
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:justify-center">
+          <div className="w-full max-w-75">
+            <ThemePreview theme={preview} />
+          </div>
+          <div className="shrink-0 pb-1">
+            <LauncherPreview theme={preview} />
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor={`accent-${site.id}`}>Accent colour</Label>
-          <div className="flex items-center gap-2">
-            <input
-              id={`accent-${site.id}`}
-              type="color"
-              value={draft.accent}
-              onChange={(event) => set('accent', event.target.value)}
-              className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-border bg-surface p-1"
-            />
-            <TextInput
-              value={draft.accent}
-              onChange={(event) => set('accent', event.target.value)}
-              className="font-mono text-xs"
-            />
+          <ColorField
+            id={`accent-${site.id}`}
+            value={draft.accent}
+            onChange={(value) => set('accent', value)}
+          />
+          <p className="mt-1.5 text-[11px] text-ink-400">
+            Header, launcher and send button.
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor={`surface-${site.id}`}>Background colour</Label>
+          <ColorField
+            id={`surface-${site.id}`}
+            value={draft.surface}
+            onChange={(value) => set('surface', value)}
+          />
+          <p className="mt-1.5 text-[11px] text-ink-400">
+            Bubbles, borders and muted text are derived from this — a dark value
+            gives a dark panel.
+          </p>
+        </div>
+
+        <div className="sm:col-span-2">
+          <Label htmlFor={`text-${site.id}`}>Text colour</Label>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => set('text', draft.text ? null : preview.surfaceForeground)}
+              className={cn(
+                'h-10 shrink-0 rounded-lg border px-3 text-xs font-medium transition-all',
+                draft.text
+                  ? 'border-border bg-surface text-ink-600 hover:border-ink-300'
+                  : 'border-ink-900 bg-ink-900 text-surface',
+              )}
+            >
+              {draft.text ? 'Custom' : 'Auto'}
+            </button>
+
+            {draft.text ? (
+              <div className="min-w-0 flex-1">
+                <ColorField
+                  id={`text-${site.id}`}
+                  value={draft.text}
+                  onChange={(value) => set('text', value)}
+                />
+              </div>
+            ) : (
+              <span className="text-[11px] text-ink-500">
+                Picking{' '}
+                <code className="font-mono text-ink-700">
+                  {preview.surfaceForeground}
+                </code>{' '}
+                — whichever of black or white reads better on the background.
+              </span>
+            )}
           </div>
+
+          {readable ? null : (
+            <p className="mt-2 flex items-start gap-1.5 text-[11px] text-warning">
+              <TriangleAlert className="mt-px h-3 w-3 shrink-0" />
+              <span>
+                {contrastRatio(preview.surfaceForeground, preview.surface).toFixed(1)}
+                :1 contrast — below the 4.5:1 needed for body text.{' '}
+                {draft.text
+                  ? 'Switch back to Auto, or pick a stronger text colour.'
+                  : 'Mid-tone backgrounds fail against both black and white; go lighter or darker.'}
+              </span>
+            </p>
+          )}
         </div>
 
         <div>
