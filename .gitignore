@@ -17,3 +17,6 @@ node_modules
 # TypeScript
 next-env.d.ts
 *.tsbuildinfo
+
+# Build output of the published widget wrapper
+packages/*/dist/

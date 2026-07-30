@@ -34,6 +34,7 @@ More details in **[QUICKSTART.md](./QUICKSTART.md)**
 | **[QUICKSTART.md](./QUICKSTART.md)** | 5-minute setup guide - start here! |
 | **[SETUP.md](./SETUP.md)** | Detailed setup, configuration, and troubleshooting |
 | **[N8N_INTEGRATION.md](./N8N_INTEGRATION.md)** | How the frontend integrates with n8n webhooks |
+| **[WIDGET.md](./WIDGET.md)** | Embedding the assistant into customer websites — setup, security model, install snippets |
 | **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** | What's been built, architecture overview |
 
 ---

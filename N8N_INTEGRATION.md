@@ -463,6 +463,50 @@ Both implemented in `lib/n8n/client.ts`
 
 ---
 
+## Widget Traffic (server-to-server)
+
+Questions asked through an embedded website widget do **not** reach `/webhook/chat`
+from the browser. They go to `/api/widget/chat` in this app, which authenticates
+a signed session, then calls the same webhook server-side with the workspace key.
+See `WIDGET.md` for why: a widget key sits in public HTML, so it must never be
+the credential that also authorises ingest.
+
+Two things change on the n8n side.
+
+### 1. Shared secret (recommended)
+
+When `N8N_SHARED_SECRET` is set, server-originated calls carry:
+
+```
+X-Widget-Secret: <the secret>
+```
+
+Add a first node to the chat workflow that rejects requests whose header does
+not match. The webhook URL is guessable and publicly reachable — without this,
+anyone who learns a workspace key can call it directly and bypass every rate
+limit and origin check this app applies.
+
+Keep it optional if you also want the public share link at `/chat/[key]` to keep
+working, since that path still posts from the browser and sends no secret. To
+require it everywhere, move the share link behind the same server route first.
+
+### 2. New optional field: `site_id`
+
+```json
+{
+  "api_key": "abc123...",
+  "question": "What is the refund policy?",
+  "memory_key": "visitor:thread",
+  "site_id": "uuid-of-widget_sites-row"
+}
+```
+
+Present only for widget traffic. Retrieval is still scoped by `api_key`, so the
+workflow needs no change to work — it is there so per-site analytics do not need
+a second lookup.
+
+---
+
 ## Contact & Support
 
 For issues with the frontend ↔ n8n integration:

@@ -39,6 +39,13 @@ export interface ChatPayload {
    * thread's context and never bleeds between threads or visitors.
    */
   memory_key?: string;
+  /**
+   * Which embedded site the question came from, when it came from a widget.
+   * Absent for the public share link. The workflow does not need it to answer —
+   * retrieval is still scoped by api_key — but it makes per-site analytics
+   * possible without a second lookup.
+   */
+  site_id?: string;
 }
 
 export interface ChatSource {
@@ -119,9 +126,17 @@ async function readBody(response: Response): Promise<unknown> {
 
 export class N8nClient {
   private readonly baseUrl: string;
+  private readonly defaultHeaders: Record<string, string>;
 
-  constructor(baseUrl: string = N8N_BASE_URL) {
+  /**
+   * `defaultHeaders` exists for server-side callers. The widget's chat route
+   * proxies through the server precisely so the workspace key never reaches a
+   * browser, and it sends a shared secret so the workflow can reject anything
+   * that did not come from this backend. Browser callers pass nothing.
+   */
+  constructor(baseUrl: string = N8N_BASE_URL, defaultHeaders: Record<string, string> = {}) {
     this.baseUrl = baseUrl;
+    this.defaultHeaders = defaultHeaders;
   }
 
   /**
@@ -162,6 +177,7 @@ export class N8nClient {
 
     const response = await fetch(`${this.baseUrl}/ingest`, {
       method: 'POST',
+      headers: this.defaultHeaders,
       body: form,
     });
 
@@ -187,6 +203,7 @@ export class N8nClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...this.defaultHeaders,
       },
       body: JSON.stringify(payload),
     });

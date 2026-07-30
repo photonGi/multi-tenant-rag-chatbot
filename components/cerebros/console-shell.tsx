@@ -4,6 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
+  Code2,
   Database,
   LayoutGrid,
   LogOut,
@@ -16,7 +17,12 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
-export type ConsoleSection = 'workspaces' | 'documents' | 'chat' | 'admin'
+export type ConsoleSection =
+  | 'workspaces'
+  | 'documents'
+  | 'websites'
+  | 'chat'
+  | 'admin'
 
 type NavItem = {
   id: ConsoleSection
@@ -38,6 +44,12 @@ function useNavItems(companyId?: string | null, chatHref?: string | null): NavIt
       label: 'Documents',
       icon: Database,
       href: companyId ? `/documents?company_id=${companyId}` : null,
+    },
+    {
+      id: 'websites',
+      label: 'Websites',
+      icon: Code2,
+      href: companyId ? `/websites?company_id=${companyId}` : null,
     },
     {
       id: 'chat',
