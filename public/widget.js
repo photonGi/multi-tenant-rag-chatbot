@@ -45,6 +45,11 @@
   const publicKey = script.dataset.key
   if (!publicKey) return
 
+  // Opt out of the floating launcher. Set when the page only wants the inline
+  // form — a chat docked into a container the host lays out itself — so the
+  // two do not both appear.
+  const wantsLauncher = script.dataset.launcher !== 'false'
+
   // The API lives wherever this script was served from, so nothing is
   // hardcoded and self-hosted deployments need no extra configuration.
   let apiBase = script.dataset.api || ''
@@ -62,31 +67,58 @@
   let launcher = null
   let badge = null
   let panel = null
-  let iframe = null
   let isOpen = false
-  let iframeReady = false
   let destroyed = false
   /** An open() that arrived before config did. Replayed once boot finishes. */
   let pendingOpen = false
+  /** Inline mounts requested before config arrived. Drained once boot finishes. */
+  const inlineQueue = []
+
+  /**
+   * Every live chat frame on the page.
+   *
+   * There can be more than one: the floating panel, plus any number of inline
+   * mounts a host component has dropped into its own containers. Each entry is
+   * `{ frame, inline, ready }` and messages are routed by matching
+   * `event.source` against `frame.contentWindow` — which is why this is a list
+   * rather than a single variable.
+   */
+  const panels = []
+
+  function panelFor(source) {
+    return panels.find((entry) => entry.frame?.contentWindow === source)
+  }
+
+  /** The floating panel, if the launcher was mounted. */
+  function floatingPanel() {
+    return panels.find((entry) => !entry.inline)
+  }
 
   // ── Messaging ─────────────────────────────────────────────────────────────
-  function sendToPanel(message) {
-    if (!iframe?.contentWindow) return
+  function sendTo(entry, message) {
+    if (!entry?.frame?.contentWindow) return
     message.channel = CHANNEL
     // Targeted at our own origin rather than '*': the session token travels
     // over this channel, and a wildcard target would hand it to whatever
     // document occupied the frame if navigation ever raced us.
-    iframe.contentWindow.postMessage(message, apiBase)
+    entry.frame.contentWindow.postMessage(message, apiBase)
   }
 
-  function pushInit() {
-    if (!config || !iframeReady) return
-    sendToPanel({
+  function pushInit(entry) {
+    if (!config || !entry?.ready) return
+    sendTo(entry, {
       type: 'init',
       session: config.session,
       theme: config.theme,
       parentOrigin: window.location.origin,
+      // An inline panel is always visible and cannot be dismissed, so it hides
+      // its own close control rather than offering one that does nothing.
+      inline: entry.inline,
     })
+  }
+
+  function pushInitToAll() {
+    panels.forEach(pushInit)
   }
 
   // ── Config ────────────────────────────────────────────────────────────────
@@ -287,27 +319,84 @@
     document.body.appendChild(host)
   }
 
-  /**
-   * The iframe is created on first open, not at mount. That is the difference
-   * between the widget costing a customer's page one small script and costing
-   * it a whole second document, on every page load, for a panel most visitors
-   * never open.
-   */
-  function ensureIframe() {
-    if (iframe) return
-
-    iframe = document.createElement('iframe')
-    iframe.src = config.embedUrl
-    iframe.title = config.theme?.title || 'Chat assistant'
+  /** Builds a chat frame and registers it so messages can be routed to it. */
+  function createPanelFrame(container, inline) {
+    const frame = document.createElement('iframe')
+    frame.src = config.embedUrl
+    frame.title = config.theme?.title || 'Chat assistant'
+    frame.style.cssText = 'width:100%;height:100%;border:0;display:block;'
     // Enough to run the panel and nothing more. Withholding
     // allow-top-navigation is the point: a compromised panel must not be able
     // to redirect the customer's page out from under their visitor.
-    iframe.setAttribute(
+    frame.setAttribute(
       'sandbox',
       'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox',
     )
-    iframe.setAttribute('referrerpolicy', 'origin')
-    panel.appendChild(iframe)
+    frame.setAttribute('referrerpolicy', 'origin')
+    container.appendChild(frame)
+
+    const entry = { frame, inline, ready: false }
+    panels.push(entry)
+    return entry
+  }
+
+  /**
+   * The floating panel's iframe is created on first open, not at mount. That is
+   * the difference between the widget costing a customer's page one small
+   * script and costing it a whole second document, on every page load, for a
+   * panel most visitors never open.
+   */
+  function ensureIframe() {
+    if (floatingPanel()) return
+    createPanelFrame(panel, false)
+  }
+
+  /**
+   * Inline mode: a chat docked into a container the host page lays out itself,
+   * with no launcher and no floating panel.
+   *
+   * Deliberately mounted as an iframe like the floating panel, rather than
+   * rendered into the host's DOM — the isolation guarantees are the whole
+   * reason this design works, and an inline chat sitting in the middle of
+   * someone's page is if anything more exposed to their CSS, not less.
+   *
+   * Returns a disposer; the host component calls it on unmount.
+   */
+  function mountInline(target) {
+    if (destroyed || !target?.appendChild) return () => {}
+
+    let entry = null
+    let disposed = false
+
+    const attach = () => {
+      if (disposed || !config) return
+      // The container is the host's to size. Filling it is the only layout
+      // opinion taken here — everything else is theirs.
+      if (!target.style.position) target.style.position = 'relative'
+      entry = createPanelFrame(target, true)
+    }
+
+    if (config) {
+      attach()
+    } else {
+      // Config is still in flight. Queue the mount the same way open() does,
+      // so a component that renders before the round trip finishes still works.
+      inlineQueue.push(attach)
+    }
+
+    return () => {
+      if (disposed) return
+      disposed = true
+
+      const queued = inlineQueue.indexOf(attach)
+      if (queued !== -1) inlineQueue.splice(queued, 1)
+
+      if (!entry) return
+      const index = panels.indexOf(entry)
+      if (index !== -1) panels.splice(index, 1)
+      entry.frame.remove()
+      entry = null
+    }
   }
 
   // ── Open / close ──────────────────────────────────────────────────────────
@@ -324,6 +413,10 @@
       return
     }
 
+    // Inline-only pages never mount a launcher or a floating panel, so there
+    // is nothing here to open. The inline chat is already on screen.
+    if (!panel) return
+
     ensureIframe()
 
     isOpen = true
@@ -333,7 +426,7 @@
     launcher.setAttribute('aria-expanded', 'true')
 
     setBadge(0)
-    sendToPanel({ type: 'visibility', open: true })
+    sendTo(floatingPanel(), { type: 'visibility', open: true })
 
     // Freezing the page behind a full-screen panel stops the body scrolling
     // under it on iOS, which otherwise reads as the widget being broken.
@@ -354,7 +447,7 @@
     launcher.setAttribute('aria-label', 'Open chat')
     launcher.setAttribute('aria-expanded', 'false')
 
-    sendToPanel({ type: 'visibility', open: false })
+    sendTo(floatingPanel(), { type: 'visibility', open: false })
     document.documentElement.style.overflow = ''
   }
 
@@ -379,39 +472,48 @@
   // ── Panel messages ────────────────────────────────────────────────────────
   function onMessage(event) {
     // Both checks matter. The origin check stops any other frame on the page
-    // from impersonating the panel; the source check stops a second frame from
-    // our own origin — one the customer also embeds — from driving this widget.
+    // from impersonating a panel; matching event.source against a registered
+    // frame stops a second frame from our own origin — one the customer also
+    // embeds — from driving this widget.
     if (event.origin !== apiBase) return
-    if (event.source !== iframe?.contentWindow) return
+
+    const entry = panelFor(event.source)
+    if (!entry) return
 
     const data = event.data
     if (!data || data.channel !== CHANNEL) return
 
     if (data.type === 'ready') {
-      iframeReady = true
-      pushInit()
-      // The panel can finish loading after the visitor already opened it.
-      if (isOpen) sendToPanel({ type: 'visibility', open: true })
+      entry.ready = true
+      pushInit(entry)
+      // An inline panel is permanently visible; the floating one may have been
+      // opened before its iframe finished loading.
+      if (entry.inline || isOpen) sendTo(entry, { type: 'visibility', open: true })
       return
     }
 
     if (data.type === 'close') {
-      close()
+      // Only the floating panel can be dismissed. An inline panel's container
+      // belongs to the host page, so closing it is not ours to do.
+      if (!entry.inline) close()
       return
     }
 
     if (data.type === 'unread') {
-      if (!isOpen) setBadge(data.count || 0)
+      // The badge belongs to the launcher, so an inline panel has nowhere to
+      // put one — and it is visible anyway, so nothing is unread.
+      if (!entry.inline && !isOpen) setBadge(data.count || 0)
       return
     }
 
     if (data.type === 'refresh') {
-      // The session aged out mid-conversation. Mint a new one and hand it back
-      // so the message the visitor already typed can be retried.
+      // The session aged out mid-conversation. Mint a new one and hand it to
+      // every panel — they all share the one session — so the message the
+      // visitor already typed can be retried.
       fetchConfig().then((fresh) => {
         if (!fresh || destroyed) return
         config = fresh
-        pushInit()
+        pushInitToAll()
       })
     }
   }
@@ -436,14 +538,22 @@
      * ask this.
      */
     isReady: () => config !== null,
+    /**
+     * Docks a chat into a container the host page owns and lays out itself —
+     * no launcher, no floating panel. Returns a disposer to call on unmount.
+     */
+    mountInline,
     destroy() {
       destroyed = true
       pendingOpen = false
+      inlineQueue.length = 0
       window.removeEventListener('message', onMessage)
       document.removeEventListener('keydown', onKeydown)
       document.documentElement.style.overflow = ''
+      panels.forEach((entry) => entry.frame.remove())
+      panels.length = 0
       host?.remove()
-      host = root = launcher = badge = panel = iframe = null
+      host = root = launcher = badge = panel = null
       window.__mtChatbotLoaded = false
       delete window.MTChatbot
     },
@@ -458,10 +568,20 @@
       if (!result || destroyed) return
 
       config = result
-      mount(result.theme)
 
+      // Listeners go on before anything mounts, so a frame that loads fast
+      // cannot say "ready" into a void.
       window.addEventListener('message', onMessage)
       document.addEventListener('keydown', onKeydown)
+
+      // Inline mounts requested while config was in flight.
+      const queued = inlineQueue.splice(0)
+      queued.forEach((attach) => attach())
+
+      // Inline-only pages get no launcher, and nothing below applies to them.
+      if (!wantsLauncher) return
+
+      mount(result.theme)
 
       // Someone called open() while the config was still in flight.
       if (pendingOpen) {

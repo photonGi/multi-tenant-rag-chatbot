@@ -55,7 +55,11 @@ export async function updateSession(request: NextRequest) {
 
   // Routes that require an authenticated session. Everything else (the auth
   // pages themselves, the OAuth callback, the error page, /chat) stays public.
-  const protectedRoutes = ['/documents', '/admin', '/dashboard']
+  //
+  // /embed and /api/widget are deliberately absent and never reach here —
+  // proxy.ts short-circuits them, because a visitor on a customer's website has
+  // no session with us and must not be redirected to a login page.
+  const protectedRoutes = ['/documents', '/admin', '/dashboard', '/websites']
   const isProtectedRoute =
     request.nextUrl.pathname === '/' ||
     protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))

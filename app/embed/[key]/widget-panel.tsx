@@ -40,6 +40,8 @@ const REFRESH_TIMEOUT_MS = 8000
 export function WidgetPanel({ publicKey }: { publicKey: string | null }) {
   const [phase, setPhase] = useState<Phase>('connecting')
   const [theme, setTheme] = useState<WidgetTheme>(DEFAULT_THEME)
+  /** Docked into a host-owned container rather than the floating panel. */
+  const [inline, setInline] = useState(false)
   const [thread, setThread] = useState<ChatThread | null>(null)
   const [input, setInput] = useState('')
   const [pending, setPending] = useState(false)
@@ -89,7 +91,13 @@ export function WidgetPanel({ publicKey }: { publicKey: string | null }) {
         parentOriginRef.current = event.origin
         sessionRef.current = message.session
         setTheme(resolveTheme(message.theme))
+        setInline(message.inline === true)
         setPhase('ready')
+
+        // An inline panel is permanently on screen, so nothing it receives is
+        // ever "unread" and it should focus its composer without waiting for a
+        // visibility message that will never come.
+        if (message.inline) openRef.current = true
 
         // Anything blocked on a 401 can now continue.
         const waiters = refreshWaitersRef.current
@@ -365,14 +373,18 @@ export function WidgetPanel({ publicKey }: { publicKey: string | null }) {
           </button>
         ) : null}
 
-        <button
-          type="button"
-          onClick={() => post({ type: 'close' })}
-          aria-label="Close chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-opacity hover:opacity-70"
-        >
-          <X className="h-4.5 w-4.5" />
-        </button>
+        {/* Inline panels live in a container the host page owns and lays out,
+            so there is nothing here for a close button to dismiss. */}
+        {inline ? null : (
+          <button
+            type="button"
+            onClick={() => post({ type: 'close' })}
+            aria-label="Close chat"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-opacity hover:opacity-70"
+          >
+            <X className="h-4.5 w-4.5" />
+          </button>
+        )}
       </header>
 
       {/* ── Transcript ───────────────────────────────────────────────────── */}

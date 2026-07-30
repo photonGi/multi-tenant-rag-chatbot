@@ -32,6 +32,7 @@ More details in **[QUICKSTART.md](./QUICKSTART.md)**
 | Document | Purpose |
 |----------|---------|
 | **[QUICKSTART.md](./QUICKSTART.md)** | 5-minute setup guide - start here! |
+| **[Features.md](./Features.md)** | Everything the project does today, and the honest gaps |
 | **[SETUP.md](./SETUP.md)** | Detailed setup, configuration, and troubleshooting |
 | **[N8N_INTEGRATION.md](./N8N_INTEGRATION.md)** | How the frontend integrates with n8n webhooks |
 | **[WIDGET.md](./WIDGET.md)** | Embedding the assistant into customer websites — setup, security model, install snippets |

@@ -19,6 +19,20 @@ export interface ChatWidgetOptions {
    * or pointing a staging build at a staging backend.
    */
   appUrl?: string
+  /**
+   * Show the floating launcher bubble. Defaults to true, and to false for
+   * inline mounts — a page that docks the chat into its own layout rarely
+   * wants a second copy floating over it.
+   *
+   * Only the first call on a page decides this: the loader is a singleton, so
+   * a later call cannot turn the launcher on or off.
+   */
+  launcher?: boolean
+}
+
+export interface InlineChatOptions extends ChatWidgetOptions {
+  /** The element to fill. The host owns its size, position and borders. */
+  target: HTMLElement
 }
 
 interface MTChatbotApi {
@@ -31,6 +45,8 @@ interface MTChatbotApi {
    * an older widget.js will not have it — see `whenChatReady`.
    */
   isReady?: () => boolean
+  /** Docks a chat into a host-owned container. Returns a disposer. */
+  mountInline?: (target: HTMLElement) => () => void
   destroy: () => void
 }
 
@@ -55,59 +71,124 @@ function normalizeBase(appUrl?: string): string {
 }
 
 /**
+ * How many live consumers there are.
+ *
+ * The loader is a page-level singleton, but a page can legitimately hold
+ * several references to it — a floating launcher plus two inline panels, say.
+ * Without counting, unmounting any one of them would tear down the widget for
+ * all of them.
+ */
+let consumers = 0
+
+function releaseLoader(): void {
+  consumers -= 1
+  if (consumers > 0) return
+
+  document.getElementById(SCRIPT_ID)?.remove()
+
+  // Removing a <script> element does not cancel a fetch already in flight, so
+  // a fast unmount (StrictMode does exactly this) can leave the loader to
+  // finish booting into a page that no longer wants it. Waiting for the API to
+  // appear is what stops that becoming an orphaned widget.
+  if (window.MTChatbot) {
+    window.MTChatbot.destroy()
+    return
+  }
+
+  const deadline = Date.now() + READY_TIMEOUT_MS
+  const timer = setInterval(() => {
+    if (window.MTChatbot) {
+      window.MTChatbot.destroy()
+      clearInterval(timer)
+    } else if (Date.now() > deadline || consumers > 0) {
+      // consumers > 0 means something re-mounted while we waited; leave it be.
+      clearInterval(timer)
+    }
+  }, READY_POLL_MS)
+}
+
+/**
  * Injects the loader. Returns a cleanup function — call it on unmount.
  *
- * Safe to call more than once: the loader itself guards against
- * double-injection, and the script-id check here stops a second `<script>`
- * from being appended at all.
+ * Safe to call more than once: the script is injected only if absent, and the
+ * loader itself guards against double-injection. The widget is torn down only
+ * when the last consumer releases it.
  */
 export function loadChatWidget(options: ChatWidgetOptions): () => void {
   // Next.js, Remix and Nuxt all run component code on the server first.
   if (typeof document === 'undefined') return () => {}
   if (!options.publicKey) return () => {}
 
-  if (document.getElementById(SCRIPT_ID)) {
-    return () => {}
+  consumers += 1
+
+  if (!document.getElementById(SCRIPT_ID)) {
+    const base = normalizeBase(options.appUrl)
+
+    const script = document.createElement('script')
+    script.id = SCRIPT_ID
+    script.src = `${base}/widget.js`
+    script.async = true
+    script.dataset.key = options.publicKey
+    // Explicit rather than letting the loader derive it from its own src, so a
+    // CDN-hosted copy of widget.js still calls the right API.
+    script.dataset.api = base
+    if (options.launcher === false) script.dataset.launcher = 'false'
+
+    document.body.appendChild(script)
   }
 
-  const base = normalizeBase(options.appUrl)
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    releaseLoader()
+  }
+}
 
-  const script = document.createElement('script')
-  script.id = SCRIPT_ID
-  script.src = `${base}/widget.js`
-  script.async = true
-  script.dataset.key = options.publicKey
-  // Explicit rather than letting the loader derive it from its own src, so a
-  // CDN-hosted copy of widget.js still calls the right API.
-  script.dataset.api = base
+/**
+ * Docks the chat into an element you own, with no floating launcher.
+ *
+ * Use this when the chat is part of your page — a support tab, a sidebar, a
+ * dedicated /help route — rather than an overlay. You control the container's
+ * size, position and borders; the chat fills it.
+ *
+ * Still an iframe, exactly like the floating panel. An inline chat sits in the
+ * middle of your layout, so it is if anything *more* exposed to your CSS —
+ * keeping the isolation is what stops your stylesheet and the panel's from
+ * interfering with each other.
+ *
+ * Returns a disposer. Call it on unmount.
+ */
+export function mountInlineChat(options: InlineChatOptions): () => void {
+  if (typeof document === 'undefined') return () => {}
+  if (!options.publicKey || !options.target) return () => {}
 
-  document.body.appendChild(script)
+  const releaseScript = loadChatWidget({
+    publicKey: options.publicKey,
+    appUrl: options.appUrl,
+    // An inline chat plus a floating bubble is two chats on one page. Opt in
+    // explicitly if that is really wanted.
+    launcher: options.launcher ?? false,
+  })
 
+  let disposeInline: (() => void) | null = null
   let disposed = false
+
+  whenChatReady()
+    .then((api) => {
+      // Unmounted while the loader was still booting.
+      if (disposed) return
+      disposeInline = api.mountInline?.(options.target) ?? null
+    })
+    .catch(() => {
+      // Never loaded — blocked, or an origin the site owner has not allowed.
+    })
 
   return () => {
     if (disposed) return
     disposed = true
-    script.remove()
-
-    // Removing a <script> element does not cancel a fetch already in flight,
-    // so a fast unmount (StrictMode does exactly this) can leave the loader to
-    // finish booting into a page that no longer wants it. Waiting for the API
-    // to appear is what stops that becoming an orphaned widget.
-    if (window.MTChatbot) {
-      window.MTChatbot.destroy()
-      return
-    }
-
-    const deadline = Date.now() + READY_TIMEOUT_MS
-    const timer = setInterval(() => {
-      if (window.MTChatbot) {
-        window.MTChatbot.destroy()
-        clearInterval(timer)
-      } else if (Date.now() > deadline) {
-        clearInterval(timer)
-      }
-    }, READY_POLL_MS)
+    disposeInline?.()
+    releaseScript()
   }
 }
 

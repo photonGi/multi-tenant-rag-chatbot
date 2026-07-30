@@ -19,6 +19,7 @@ export type StackId =
   | 'nextjs'
   | 'vue'
   | 'npm'
+  | 'inline'
   | 'wordpress'
   | 'shopify'
   | 'gtm'
@@ -124,6 +125,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 #   import { loadChatWidget } from '@shoaibakhter.sysmatixx/chat-widget'
 #   const dispose = loadChatWidget({ publicKey: '${input.publicKey}' })`,
       note: 'The package injects the same script tag. Its only job is handling SPA lifecycle correctly — StrictMode double-mounts, unmount cleanup.',
+    },
+    {
+      id: 'inline',
+      label: 'Inline / embedded panel',
+      family: 'JavaScript',
+      where: 'Use when the chat should sit inside your page — a support tab, a sidebar, a /help route — rather than float over it.',
+      language: 'tsx',
+      code: `import { InlineChatWidget } from '@shoaibakhter.sysmatixx/chat-widget/react'
+
+export default function HelpPage() {
+  return (
+    <InlineChatWidget
+      publicKey="${input.publicKey}"
+      style={{ height: 600, maxWidth: 420, borderRadius: 16, overflow: 'hidden' }}
+    />
+  )
+}
+
+// Without React:
+//
+//   import { mountInlineChat } from '@shoaibakhter.sysmatixx/chat-widget'
+//   const dispose = mountInlineChat({
+//     publicKey: '${input.publicKey}',
+//     target: document.getElementById('chat'),
+//   })`,
+      note: 'Give the container a height — a bare div collapses to zero. No launcher appears in this mode; pass launcher to show one as well.',
     },
     {
       id: 'wordpress',

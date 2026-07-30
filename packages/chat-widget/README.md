@@ -62,6 +62,50 @@ import { openChat } from '@shoaibakhter.sysmatixx/chat-widget'
 `openChat` is safe to call before the script has finished loading — the intent
 is queued, so the first click works even on a cold page.
 
+## Inline mode — the chat as part of your page
+
+Instead of a bubble floating over everything, dock the chat into a container
+you own and lay out yourself. Good for a support tab, a sidebar, or a dedicated
+`/help` route.
+
+```tsx
+import { InlineChatWidget } from '@shoaibakhter.sysmatixx/chat-widget/react'
+
+<InlineChatWidget
+  publicKey="pk_live_..."
+  style={{ height: 600, maxWidth: 420, borderRadius: 16, overflow: 'hidden' }}
+/>
+```
+
+It renders one `<div>` and fills it. **Give it a height** — a bare div collapses
+to zero and the chat will look like it never loaded. There is a 520px default
+so an unstyled container still shows something.
+
+No launcher appears in this mode. Pass `launcher` if you want both:
+
+```tsx
+<InlineChatWidget publicKey="pk_live_..." launcher />
+```
+
+In inline mode the panel drops its close button — the container is yours, so
+dismissing it is your call, not the widget's.
+
+Vanilla equivalent:
+
+```ts
+import { mountInlineChat } from '@shoaibakhter.sysmatixx/chat-widget'
+
+const dispose = mountInlineChat({
+  publicKey: 'pk_live_...',
+  target: document.getElementById('chat')!,
+})
+```
+
+Both are still iframes, exactly like the floating panel. An inline chat sits in
+the middle of your layout, so it is if anything *more* exposed to your CSS —
+keeping the isolation is what stops your stylesheet and the panel's interfering
+with each other.
+
 ## Vue, Svelte, Angular, vanilla
 
 ```ts
@@ -91,8 +135,10 @@ import Script from 'next/script'
 
 | Export | Description |
 | --- | --- |
-| `ChatWidget` | React component (from `@shoaibakhter.sysmatixx/chat-widget/react`). Renders nothing. |
+| `ChatWidget` | React component (from `…/react`). Floating launcher. Renders nothing. |
+| `InlineChatWidget` | React component (from `…/react`). Docks the chat into a div you style. |
 | `loadChatWidget(options)` | Injects the loader. Returns a cleanup function. |
+| `mountInlineChat(options)` | Docks a chat into `options.target`. Returns a disposer. |
 | `openChat()` / `closeChat()` / `toggleChat()` | Controls. Queue until the widget is ready. |
 | `isChatOpen()` | Synchronous. `false` until the widget has loaded. |
 | `whenChatReady(timeoutMs?)` | Resolves with the widget API, or rejects if it never loads. |
@@ -104,7 +150,10 @@ import Script from 'next/script'
 | --- | --- | --- |
 | `publicKey` | — | Required. From the workspace's **Websites** tab. |
 | `appUrl` | `https://mt-rag-chatbots.vercel.app` | Override when self-hosting. |
-| `enabled` | `true` | React only. `false` unmounts the widget. |
+| `enabled` | `true` | `ChatWidget` only. `false` unmounts the widget. |
+| `launcher` | `true`, or `false` for inline | Show the floating bubble. Only the first call on a page decides this — the loader is a singleton. |
+| `target` | — | `mountInlineChat` only. The element to fill. |
+| `className` / `style` | — | `InlineChatWidget` only. Applied to the container div. |
 
 ## Why the widget stays out of the React tree
 

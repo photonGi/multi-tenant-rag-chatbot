@@ -31,6 +31,12 @@ export type LoaderMessage =
       session: string
       theme: unknown
       parentOrigin: string
+      /**
+       * Docked into a container the host page owns, rather than shown in the
+       * floating panel. The panel drops its close control in this mode — the
+       * container is not ours to dismiss — and lets the host own the corners.
+       */
+      inline?: boolean
     }
   /** Panel visibility changed, so it can focus the composer on open. */
   | { channel: typeof CHANNEL; type: 'visibility'; open: boolean }
