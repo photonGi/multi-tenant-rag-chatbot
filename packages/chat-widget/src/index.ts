@@ -26,6 +26,11 @@ interface MTChatbotApi {
   close: () => void
   toggle: () => void
   isOpen: () => boolean
+  /**
+   * Config fetched and launcher mounted. Optional because a deployment serving
+   * an older widget.js will not have it — see `whenChatReady`.
+   */
+  isReady?: () => boolean
   destroy: () => void
 }
 
@@ -107,10 +112,23 @@ export function loadChatWidget(options: ChatWidgetOptions): () => void {
 }
 
 /**
+ * Whether the widget is mounted and usable, not merely present.
+ *
+ * The loader assigns `window.MTChatbot` synchronously but fetches its config
+ * asynchronously, so the object exists well before the widget can do anything.
+ * `isReady` is absent on older loaders; treating that as ready keeps this
+ * working against a deployment that has not been updated yet.
+ */
+function apiIsUsable(api: MTChatbotApi): boolean {
+  return typeof api.isReady === 'function' ? api.isReady() : true
+}
+
+/**
  * Resolves once the widget is live, or rejects if it never arrives.
  *
- * Useful when you want to know whether the widget actually loaded — it will
- * not, for instance, on an origin the site owner has not allowed.
+ * Waits for the config round trip, not just for the global to appear — so a
+ * rejection genuinely means the widget did not load, which is what happens on
+ * an origin the site owner has not allowed.
  */
 export function whenChatReady(timeoutMs: number = READY_TIMEOUT_MS): Promise<MTChatbotApi> {
   return new Promise((resolve, reject) => {
@@ -118,16 +136,17 @@ export function whenChatReady(timeoutMs: number = READY_TIMEOUT_MS): Promise<MTC
       reject(new Error('The chat widget is only available in the browser.'))
       return
     }
-    if (window.MTChatbot) {
+    if (window.MTChatbot && apiIsUsable(window.MTChatbot)) {
       resolve(window.MTChatbot)
       return
     }
 
     const deadline = Date.now() + timeoutMs
     const timer = setInterval(() => {
-      if (window.MTChatbot) {
+      const api = window.MTChatbot
+      if (api && apiIsUsable(api)) {
         clearInterval(timer)
-        resolve(window.MTChatbot)
+        resolve(api)
       } else if (Date.now() > deadline) {
         clearInterval(timer)
         reject(new Error('The chat widget did not load.'))
@@ -139,11 +158,12 @@ export function whenChatReady(timeoutMs: number = READY_TIMEOUT_MS): Promise<MTC
 /**
  * Controls, safe to call before the script has finished loading.
  *
- * A "Need help?" button often renders before an async script lands; queueing
- * the intent rather than dropping it is the difference between the first click
- * working and doing nothing.
+ * A "Need help?" button often renders before an async script lands. Two things
+ * make the first click work anyway: this waits for the widget to be genuinely
+ * ready rather than merely present, and the loader itself queues an `open()`
+ * that arrives before its config does. Either alone would drop that click.
  */
-function control(action: keyof Omit<MTChatbotApi, 'isOpen'>): void {
+function control(action: 'open' | 'close' | 'toggle' | 'destroy'): void {
   whenChatReady()
     .then((api) => api[action]())
     .catch(() => {

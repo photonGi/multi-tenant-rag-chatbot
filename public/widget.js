@@ -66,6 +66,8 @@
   let isOpen = false
   let iframeReady = false
   let destroyed = false
+  /** An open() that arrived before config did. Replayed once boot finishes. */
+  let pendingOpen = false
 
   // ── Messaging ─────────────────────────────────────────────────────────────
   function sendToPanel(message) {
@@ -310,7 +312,18 @@
 
   // ── Open / close ──────────────────────────────────────────────────────────
   function open() {
-    if (destroyed || isOpen || !config) return
+    if (destroyed || isOpen) return
+
+    // The API object is exposed synchronously, but the config round trip that
+    // supplies the theme and the iframe URL is not done yet. A "Need help?"
+    // button wired to open() and clicked on a cold page therefore lands here
+    // with nothing to open — so remember the intent and honour it once boot
+    // finishes, rather than silently dropping the visitor's click.
+    if (!config) {
+      pendingOpen = true
+      return
+    }
+
     ensureIframe()
 
     isOpen = true
@@ -330,6 +343,9 @@
   }
 
   function close() {
+    // Cancels a queued open too: close() after open() on a cold page must mean
+    // "stay shut", not "open anyway once config lands".
+    pendingOpen = false
     if (!isOpen) return
 
     isOpen = false
@@ -343,7 +359,9 @@
   }
 
   function toggle() {
-    if (isOpen) close()
+    // `pendingOpen` counts as open for toggling: two clicks on a cold page
+    // should net to shut, not queue an open that fires a second later.
+    if (isOpen || pendingOpen) close()
     else open()
   }
 
@@ -410,8 +428,17 @@
     close,
     toggle,
     isOpen: () => isOpen,
+    /**
+     * Whether the widget is actually usable — config fetched and launcher
+     * mounted. The API object itself exists from the moment this script runs,
+     * so its presence alone says nothing; callers that need to know the widget
+     * really loaded (rather than being refused on an unlisted origin) should
+     * ask this.
+     */
+    isReady: () => config !== null,
     destroy() {
       destroyed = true
+      pendingOpen = false
       window.removeEventListener('message', onMessage)
       document.removeEventListener('keydown', onKeydown)
       document.documentElement.style.overflow = ''
@@ -435,6 +462,13 @@
 
       window.addEventListener('message', onMessage)
       document.addEventListener('keydown', onKeydown)
+
+      // Someone called open() while the config was still in flight.
+      if (pendingOpen) {
+        pendingOpen = false
+        open()
+        return
+      }
 
       if (typeof result.theme.autoOpenAfter === 'number') {
         setTimeout(open, result.theme.autoOpenAfter * 1000)
