@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Panel } from '@/components/cerebros/ui'
+import { Panel } from '@/components/console/ui'
 import { Bot } from 'lucide-react'
 
 /**

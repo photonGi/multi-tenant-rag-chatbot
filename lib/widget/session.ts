@@ -5,7 +5,7 @@
  * THE PROBLEM THIS SOLVES
  * -----------------------
  * The panel runs at /embed/<key> on *our* origin. So when it POSTs to
- * /api/widget/chat the browser sends `Origin: https://app.sysmatixx.com` — our
+ * /api/widget/chat the browser sends `Origin: https://mt-rag-chatbots.vercel.app` — our
  * own origin, not the customer's site. The allowlist check that works for the
  * loader is therefore worthless on the chat route, and a scraped public key
  * could be replayed with curl from anywhere.

@@ -1,6 +1,6 @@
 ---
 version: 1.0.0
-name: CerebrOS System
+name: Multi-Tenant Chatbot System
 description: A professional, minimal interface for AI analytics and fan engagement orchestration.
 colors:
   canvas: "#FAFAFA"
@@ -60,7 +60,7 @@ motion:
   pulse-slow: "3s infinite"
 ---
 ## Overview
-CerebrOS is a high-density intelligence environment. It prioritizes clarity, utilizing a grayscale foundation with high-contrast amber accents to highlight AI insights and actionable items.
+The Multi-Tenant Chatbot console is a high-density intelligence environment. It prioritizes clarity, utilizing a grayscale foundation with high-contrast amber accents to highlight AI insights and actionable items.
 
 ## Colors
 The palette is strictly utility-focused. `#FAFAFA` serves as the primary canvas, while the `ink` scale provides a range of text hierarchies from metadata to primary headers. The brand color `#F59E0B` is reserved for "Intelligence" states and primary calls to action.

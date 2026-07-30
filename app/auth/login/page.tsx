@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 
-import { AuthShell } from '@/components/cerebros/auth-shell'
-import { PasswordInput } from '@/components/cerebros/password-input'
-import { Alert, Btn, Label, TextInput } from '@/components/cerebros/ui'
+import { AuthShell } from '@/components/console/auth-shell'
+import { PasswordInput } from '@/components/console/password-input'
+import { Alert, Btn, Label, TextInput } from '@/components/console/ui'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {

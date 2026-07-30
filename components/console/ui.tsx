@@ -3,7 +3,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 /* =============================================================================
-   CerebrOS primitives.
+   Console primitives.
 
    These exist so pages can be written at the density the spec calls for without
    repeating the same twenty-class strings. Anything visual that appears more

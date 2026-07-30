@@ -35,7 +35,7 @@ So the widget uses a second credential — `widget_sites.public_key`, prefixed
 | Variable | Required | Purpose |
 |---|---|---|
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | Widget routes are anonymous — a visitor on a customer's site has no session — so they resolve `widget_sites` as service_role and authorise in code. Without it the widget cannot start. |
-| `NEXT_PUBLIC_APP_URL` | **yes in production** | The stable domain customers paste into their sites, e.g. `https://app.sysmatixx.com`. Falls back to `VERCEL_URL`, which is per-deployment and therefore wrong for a production snippet. |
+| `NEXT_PUBLIC_APP_URL` | **yes in production** | The stable domain customers paste into their sites, e.g. `https://mt-rag-chatbots.vercel.app`. Falls back to `VERCEL_URL`, which is per-deployment and therefore wrong for a production snippet. |
 | `WIDGET_SESSION_SECRET` | recommended | Signs widget session tokens. Falls back to the service-role key, which works but means rotating the database key signs every visitor out mid-conversation. Any long random string. |
 | `N8N_WEBHOOK_BASE_URL` | optional | Defaults to the value hardcoded in `lib/n8n/client.ts`. |
 | `N8N_SHARED_SECRET` | recommended | Sent as `X-Widget-Secret` on server-to-n8n calls. Add a matching check to the workflow so the webhook only answers this backend. |
@@ -43,7 +43,7 @@ So the widget uses a second credential — `widget_sites.public_key`, prefixed
 ```bash
 # .env.local
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
-NEXT_PUBLIC_APP_URL=https://app.sysmatixx.com
+NEXT_PUBLIC_APP_URL=https://mt-rag-chatbots.vercel.app
 WIDGET_SESSION_SECRET=$(openssl rand -hex 32)
 N8N_SHARED_SECRET=$(openssl rand -hex 32)
 ```
@@ -93,7 +93,7 @@ The same tag works everywhere HTML is rendered — the widget only runs in the
 browser, so the customer's backend is never in the path.
 
 ```html
-<script src="https://app.sysmatixx.com/widget.js" data-key="pk_live_..." async></script>
+<script src="https://mt-rag-chatbots.vercel.app/widget.js" data-key="pk_live_..." async></script>
 ```
 
 | Stack | Where |

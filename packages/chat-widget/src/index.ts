@@ -21,7 +21,7 @@ export interface ChatWidgetOptions {
   appUrl?: string
 }
 
-interface CerebrosChatApi {
+interface MTChatbotApi {
   open: () => void
   close: () => void
   toggle: () => void
@@ -31,13 +31,13 @@ interface CerebrosChatApi {
 
 declare global {
   interface Window {
-    CerebrosChat?: CerebrosChatApi
+    MTChatbot?: MTChatbotApi
   }
 }
 
-export const DEFAULT_APP_URL = 'https://app.sysmatixx.com'
+export const DEFAULT_APP_URL = 'https://mt-rag-chatbots.vercel.app'
 
-const SCRIPT_ID = 'cerebros-chat-widget'
+const SCRIPT_ID = 'mt-chatbot-widget'
 
 /** How long `open()` will wait for a still-loading script before giving up. */
 const READY_TIMEOUT_MS = 10_000
@@ -89,15 +89,15 @@ export function loadChatWidget(options: ChatWidgetOptions): () => void {
     // so a fast unmount (StrictMode does exactly this) can leave the loader to
     // finish booting into a page that no longer wants it. Waiting for the API
     // to appear is what stops that becoming an orphaned widget.
-    if (window.CerebrosChat) {
-      window.CerebrosChat.destroy()
+    if (window.MTChatbot) {
+      window.MTChatbot.destroy()
       return
     }
 
     const deadline = Date.now() + READY_TIMEOUT_MS
     const timer = setInterval(() => {
-      if (window.CerebrosChat) {
-        window.CerebrosChat.destroy()
+      if (window.MTChatbot) {
+        window.MTChatbot.destroy()
         clearInterval(timer)
       } else if (Date.now() > deadline) {
         clearInterval(timer)
@@ -112,22 +112,22 @@ export function loadChatWidget(options: ChatWidgetOptions): () => void {
  * Useful when you want to know whether the widget actually loaded — it will
  * not, for instance, on an origin the site owner has not allowed.
  */
-export function whenChatReady(timeoutMs: number = READY_TIMEOUT_MS): Promise<CerebrosChatApi> {
+export function whenChatReady(timeoutMs: number = READY_TIMEOUT_MS): Promise<MTChatbotApi> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined') {
       reject(new Error('The chat widget is only available in the browser.'))
       return
     }
-    if (window.CerebrosChat) {
-      resolve(window.CerebrosChat)
+    if (window.MTChatbot) {
+      resolve(window.MTChatbot)
       return
     }
 
     const deadline = Date.now() + timeoutMs
     const timer = setInterval(() => {
-      if (window.CerebrosChat) {
+      if (window.MTChatbot) {
         clearInterval(timer)
-        resolve(window.CerebrosChat)
+        resolve(window.MTChatbot)
       } else if (Date.now() > deadline) {
         clearInterval(timer)
         reject(new Error('The chat widget did not load.'))
@@ -143,7 +143,7 @@ export function whenChatReady(timeoutMs: number = READY_TIMEOUT_MS): Promise<Cer
  * the intent rather than dropping it is the difference between the first click
  * working and doing nothing.
  */
-function control(action: keyof Omit<CerebrosChatApi, 'isOpen'>): void {
+function control(action: keyof Omit<MTChatbotApi, 'isOpen'>): void {
   whenChatReady()
     .then((api) => api[action]())
     .catch(() => {
@@ -159,5 +159,5 @@ export const destroyChat = () => control('destroy')
 
 /** Synchronous, and false until the widget has actually loaded. */
 export function isChatOpen(): boolean {
-  return typeof window !== 'undefined' && (window.CerebrosChat?.isOpen() ?? false)
+  return typeof window !== 'undefined' && (window.MTChatbot?.isOpen() ?? false)
 }

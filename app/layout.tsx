@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
 }
 
-// The CerebrOS spec defines a single light palette — no dark variant.
+// The design spec defines a single light palette — no dark variant.
 export const viewport: Viewport = {
   colorScheme: 'light',
   themeColor: '#fafafa',

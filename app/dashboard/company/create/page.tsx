@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Check, Loader2 } from 'lucide-react'
 
-import { ConsoleShell } from '@/components/cerebros/console-shell'
+import { ConsoleShell } from '@/components/console/console-shell'
 import {
   Alert,
   Btn,
@@ -14,7 +14,7 @@ import {
   SectionTitle,
   TextInput,
   btnClass,
-} from '@/components/cerebros/ui'
+} from '@/components/console/ui'
 import { createClient } from '@/lib/supabase/client'
 import { describeError } from '@/lib/errors'
 import { generateApiKey } from '@/lib/api-key'

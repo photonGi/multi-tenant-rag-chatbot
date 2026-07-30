@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Check, Copy } from 'lucide-react'
 
-import { Btn } from '@/components/cerebros/ui'
+import { Btn } from '@/components/console/ui'
 import { cn } from '@/lib/utils'
 import { DEFAULT_STACK, buildSnippets, type StackId } from '@/lib/widget/snippet'
 

@@ -32,8 +32,30 @@ export interface ChatThread {
   memoryKey?: string
 }
 
-const STORAGE_PREFIX = 'cerebros.chat.v1'
+const STORAGE_PREFIX = 'mtchat.v1'
+
+/**
+ * The prefix this data used to live under.
+ *
+ * Renaming the product renamed the storage key, and a bare rename would have
+ * silently orphaned every conversation already saved in a visitor's browser —
+ * they would open the chat and find their history gone, with no way to get it
+ * back. Reads fall through to this when the new key is empty, so the change is
+ * invisible; the next write lands under the new prefix.
+ *
+ * Safe to delete once enough time has passed that no visitor is still carrying
+ * pre-rename history. Nothing else references it.
+ */
+const LEGACY_STORAGE_PREFIX = 'cerebros.chat.v1'
+
 const VISITOR_STORAGE_KEY = `${STORAGE_PREFIX}.visitor`
+const LEGACY_VISITOR_STORAGE_KEY = `${LEGACY_STORAGE_PREFIX}.visitor`
+
+/** The pre-rename equivalent of a current storage key, or null if unrelated. */
+function legacyKeyFor(storageKey: string): string | null {
+  if (!storageKey.startsWith(`${STORAGE_PREFIX}.`)) return null
+  return LEGACY_STORAGE_PREFIX + storageKey.slice(STORAGE_PREFIX.length)
+}
 
 /**
  * FNV-1a over the link key. Keeps the raw key out of the storage key name
@@ -73,9 +95,15 @@ export function getVisitorId(): string {
   if (typeof window === 'undefined') return 'ssr'
 
   try {
-    const stored = window.localStorage.getItem(VISITOR_STORAGE_KEY)
+    // Falls back to the pre-rename key so a returning visitor keeps the same
+    // identity — and therefore the same conversation memory on the n8n side.
+    const stored =
+      window.localStorage.getItem(VISITOR_STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_VISITOR_STORAGE_KEY)
+
     if (stored) {
       cachedVisitorId = stored
+      window.localStorage.setItem(VISITOR_STORAGE_KEY, stored)
       return stored
     }
 
@@ -110,7 +138,11 @@ export function loadThreads(storageKey: string): ChatThread[] {
   if (typeof window === 'undefined') return []
 
   try {
-    const raw = window.localStorage.getItem(storageKey)
+    const legacyKey = legacyKeyFor(storageKey)
+    const raw =
+      window.localStorage.getItem(storageKey) ??
+      (legacyKey ? window.localStorage.getItem(legacyKey) : null)
+
     if (!raw) return []
 
     const parsed: unknown = JSON.parse(raw)

@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 
-import { ConsoleLoading, ConsoleShell } from '@/components/cerebros/console-shell'
+import { ConsoleLoading, ConsoleShell } from '@/components/console/console-shell'
 import {
   Alert,
   Btn,
@@ -22,7 +22,7 @@ import {
   PageHeading,
   SectionTitle,
   btnClass,
-} from '@/components/cerebros/ui'
+} from '@/components/console/ui'
 import { publicChatPath, publicChatUrl } from '@/lib/chat/link'
 import { createClient } from '@/lib/supabase/client'
 import { describeError } from '@/lib/errors'

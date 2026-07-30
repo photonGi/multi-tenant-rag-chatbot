@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react'
 
-import { Btn, Label, Panel, Pill, TextInput } from '@/components/cerebros/ui'
+import { Btn, Label, Panel, Pill, TextInput } from '@/components/console/ui'
 import { cn } from '@/lib/utils'
 import { formatRelative } from '@/lib/chat/storage'
 import { displayHost, normalizeOriginPattern } from '@/lib/widget/origins'
@@ -554,7 +554,7 @@ function AppearanceEditor({
           onChange={(event) => set('showBranding', event.target.checked)}
           className="h-4 w-4 rounded border-border accent-ink-900"
         />
-        <span>Show &ldquo;Powered by CerebrOS&rdquo; in the panel</span>
+        <span>Show &ldquo;Powered by Multi-Tenant Chatbot&rdquo; in the panel</span>
       </label>
 
       <div className="flex items-center gap-2 border-t border-border/60 pt-4">

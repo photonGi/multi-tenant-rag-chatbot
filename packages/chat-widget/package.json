@@ -1,7 +1,7 @@
 {
-  "name": "@sysmatixx/chat-widget",
-  "version": "0.1.0",
-  "description": "Embed a CerebrOS RAG assistant into any website. Framework wrappers around the widget loader.",
+  "name": "@shoaibakhter.sysmatixx/chat-widget",
+  "version": "0.2.0",
+  "description": "Embed a Multi-Tenant Chatbot RAG assistant into any website. Framework wrappers around the widget loader.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepublishOnly": "npm run build"
+    "prepare": "npm run build"
   },
   "keywords": ["chatbot", "rag", "widget", "embed", "support", "assistant"],
   "peerDependencies": {

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Compass } from 'lucide-react'
 
-import { btnClass } from '@/components/cerebros/ui'
+import { btnClass } from '@/components/console/ui'
 
 /**
  * Catch-all 404. Covers a bare /chat with no key, a mistyped console route, and

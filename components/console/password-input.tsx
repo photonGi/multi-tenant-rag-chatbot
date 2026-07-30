@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 
-import { TextInput } from '@/components/cerebros/ui'
+import { TextInput } from '@/components/console/ui'
 import { cn } from '@/lib/utils'
 
 /**

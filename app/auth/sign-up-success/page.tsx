@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { MailCheck } from 'lucide-react'
 
-import { AuthShell } from '@/components/cerebros/auth-shell'
-import { btnClass } from '@/components/cerebros/ui'
+import { AuthShell } from '@/components/console/auth-shell'
+import { btnClass } from '@/components/console/ui'
 
 export default function SignUpSuccessPage() {
   return (

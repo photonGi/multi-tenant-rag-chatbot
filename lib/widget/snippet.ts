@@ -107,21 +107,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       family: 'JavaScript',
       where: 'Use when you need to control the widget from code — hide it on some routes, or open it from your own button.',
       language: 'bash',
-      code: `npm i @sysmatixx/chat-widget
+      code: `npm i @shoaibakhter.sysmatixx/chat-widget
 
 # Mounted once, above your router:
 #
-#   import { ChatWidget } from '@sysmatixx/chat-widget/react'
+#   import { ChatWidget } from '@shoaibakhter.sysmatixx/chat-widget/react'
 #   <ChatWidget publicKey="${input.publicKey}" />
 #
 # Opened from your own button, anywhere:
 #
-#   import { openChat } from '@sysmatixx/chat-widget'
+#   import { openChat } from '@shoaibakhter.sysmatixx/chat-widget'
 #   <button onClick={openChat}>Need help?</button>
 #
 # Vue, Svelte, Angular and vanilla JS:
 #
-#   import { loadChatWidget } from '@sysmatixx/chat-widget'
+#   import { loadChatWidget } from '@shoaibakhter.sysmatixx/chat-widget'
 #   const dispose = loadChatWidget({ publicKey: '${input.publicKey}' })`,
       note: 'The package injects the same script tag. Its only job is handling SPA lifecycle correctly — StrictMode double-mounts, unmount cleanup.',
     },

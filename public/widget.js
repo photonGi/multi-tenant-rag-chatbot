@@ -1,5 +1,5 @@
 /**
- * CerebrOS chat widget loader.
+ * Multi-Tenant Chatbot — widget loader.
  *
  *   <script src="https://<app>/widget.js" data-key="pk_live_..." async></script>
  *
@@ -31,8 +31,8 @@
   // Guard against double-injection. React StrictMode mounts effects twice in
   // development, and tag managers are perfectly capable of firing the same
   // snippet on every route change.
-  if (window.__cerebrosWidgetLoaded) return
-  window.__cerebrosWidgetLoaded = true
+  if (window.__mtChatbotLoaded) return
+  window.__mtChatbotLoaded = true
 
   // ── Snippet configuration ─────────────────────────────────────────────────
   // `currentScript` is set while this file executes, including for async
@@ -150,11 +150,17 @@
       .launcher:hover .bubble { transform: scale(1.06); box-shadow: 0 10px 28px rgba(0,0,0,.22); }
       .launcher:active .bubble { transform: scale(.97); }
       .launcher:focus-visible .bubble { outline: 2px solid ${theme.accent}; outline-offset: 3px; }
-      .bubble svg { width: 26px; height: 26px; display: block; }
+      /* Sizing only — no display here. A '.bubble svg' rule is (0,1,1) and
+         outranks a bare '.icon-close' (0,1,0), which left the close icon
+         showing next to the message icon while the launcher was shut.
+         Specificity beats source order, so reordering would not have fixed it.
+         NB: this whole sheet is a JS template literal — no backticks. */
+      .bubble svg { width: 26px; height: 26px; }
 
       /* The open/closed class lives on the host element, so these have to go
          through :host() — a bare descendant selector inside a shadow root can
          never match an ancestor outside it. */
+      .icon-open { display: block; }
       .icon-close { display: none; }
       :host(.is-open) .icon-open { display: none; }
       :host(.is-open) .icon-close { display: block; }
@@ -240,7 +246,7 @@
   // ── Mounting ──────────────────────────────────────────────────────────────
   function mount(theme) {
     host = document.createElement('div')
-    host.dataset.cerebrosWidget = ''
+    host.dataset.mtChatbot = ''
     // The host element itself is inert; everything visible is fixed-position
     // inside the shadow root, so this cannot disturb the page's layout.
     host.style.cssText = 'position:relative;width:0;height:0;'
@@ -399,7 +405,7 @@
   // ── Public API ────────────────────────────────────────────────────────────
   // Named so a customer can wire the widget to their own "Need help?" button,
   // and so the npm wrapper has something to call on unmount.
-  window.CerebrosChat = {
+  window.MTChatbot = {
     open,
     close,
     toggle,
@@ -411,8 +417,8 @@
       document.documentElement.style.overflow = ''
       host?.remove()
       host = root = launcher = badge = panel = iframe = null
-      window.__cerebrosWidgetLoaded = false
-      delete window.CerebrosChat
+      window.__mtChatbotLoaded = false
+      delete window.MTChatbot
     },
   }
 

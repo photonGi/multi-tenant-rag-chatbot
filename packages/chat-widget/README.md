@@ -1,13 +1,13 @@
-# @sysmatixx/chat-widget
+# @shoaibakhter.sysmatixx/chat-widget
 
-Embed a CerebrOS RAG assistant into a JavaScript app.
+Embed a Multi-Tenant Chatbot RAG assistant into a JavaScript app.
 
 **You probably don't need this package.** The supported install for every stack
 is one script tag, and it works in React, Vue, WordPress, Rails, Shopify and
 plain HTML alike:
 
 ```html
-<script src="https://app.sysmatixx.com/widget.js" data-key="pk_live_..." async></script>
+<script src="https://mt-rag-chatbots.vercel.app/widget.js" data-key="pk_live_..." async></script>
 ```
 
 In a React or Vue app that means `public/index.html` (CRA) or `index.html`
@@ -19,7 +19,7 @@ hide it on certain routes, or open it from your own button.
 ## Install
 
 ```bash
-npm i @sysmatixx/chat-widget
+npm i @shoaibakhter.sysmatixx/chat-widget
 ```
 
 ## React
@@ -27,7 +27,7 @@ npm i @sysmatixx/chat-widget
 Mount once, above your router:
 
 ```tsx
-import { ChatWidget } from '@sysmatixx/chat-widget/react'
+import { ChatWidget } from '@shoaibakhter.sysmatixx/chat-widget/react'
 
 export default function App() {
   return (
@@ -54,7 +54,7 @@ const { pathname } = useLocation()
 ### Open it from your own button
 
 ```tsx
-import { openChat } from '@sysmatixx/chat-widget'
+import { openChat } from '@shoaibakhter.sysmatixx/chat-widget'
 
 <button onClick={openChat}>Need help?</button>
 ```
@@ -65,7 +65,7 @@ is queued, so the first click works even on a cold page.
 ## Vue, Svelte, Angular, vanilla
 
 ```ts
-import { loadChatWidget } from '@sysmatixx/chat-widget'
+import { loadChatWidget } from '@shoaibakhter.sysmatixx/chat-widget'
 
 // Returns a cleanup function.
 const dispose = loadChatWidget({ publicKey: 'pk_live_...' })
@@ -81,7 +81,7 @@ Prefer `next/script` — no package needed:
 import Script from 'next/script'
 
 <Script
-  src="https://app.sysmatixx.com/widget.js"
+  src="https://mt-rag-chatbots.vercel.app/widget.js"
   data-key="pk_live_..."
   strategy="afterInteractive"
 />
@@ -91,7 +91,7 @@ import Script from 'next/script'
 
 | Export | Description |
 | --- | --- |
-| `ChatWidget` | React component (from `@sysmatixx/chat-widget/react`). Renders nothing. |
+| `ChatWidget` | React component (from `@shoaibakhter.sysmatixx/chat-widget/react`). Renders nothing. |
 | `loadChatWidget(options)` | Injects the loader. Returns a cleanup function. |
 | `openChat()` / `closeChat()` / `toggleChat()` | Controls. Queue until the widget is ready. |
 | `isChatOpen()` | Synchronous. `false` until the widget has loaded. |
@@ -103,7 +103,7 @@ import Script from 'next/script'
 | Option | Default | Description |
 | --- | --- | --- |
 | `publicKey` | — | Required. From the workspace's **Websites** tab. |
-| `appUrl` | `https://app.sysmatixx.com` | Override when self-hosting. |
+| `appUrl` | `https://mt-rag-chatbots.vercel.app` | Override when self-hosting. |
 | `enabled` | `true` | React only. `false` unmounts the widget. |
 
 ## Why the widget stays out of the React tree

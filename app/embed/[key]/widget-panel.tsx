@@ -444,7 +444,7 @@ export function WidgetPanel({ publicKey }: { publicKey: string | null }) {
             !theme.showBranding && 'invisible',
           )}
         >
-          Powered by CerebrOS
+          Powered by Multi-Tenant Chatbot
         </div>
       </div>
     </div>

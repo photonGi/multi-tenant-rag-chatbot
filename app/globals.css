@@ -3,7 +3,7 @@
 @import 'shadcn/tailwind.css';
 
 /* =============================================================================
-   CerebrOS design system — see Design.md
+   Multi-Tenant Chatbot design system — see Design.md
    Grayscale foundation, amber reserved for intelligence states and primary CTAs.
    Light only: the spec defines no dark palette.
    ============================================================================= */
@@ -124,7 +124,7 @@
     }
   }
 
-  /* ── shadcn semantic aliases, remapped onto the CerebrOS palette so any
+  /* ── shadcn semantic aliases, remapped onto the Multi-Tenant Chatbot palette so any
         components/ui primitive still renders inside the system ─────────── */
   --color-background: #fafafa;
   --color-foreground: #18181b;

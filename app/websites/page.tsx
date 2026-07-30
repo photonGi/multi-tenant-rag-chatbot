@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Globe, Plus, RefreshCw, X } from 'lucide-react'
 
-import { ConsoleLoading, ConsoleShell } from '@/components/cerebros/console-shell'
+import { ConsoleLoading, ConsoleShell } from '@/components/console/console-shell'
 import {
   Alert,
   Btn,
@@ -15,7 +15,7 @@ import {
   PageHeading,
   SectionTitle,
   TextInput,
-} from '@/components/cerebros/ui'
+} from '@/components/console/ui'
 import { publicChatPath } from '@/lib/chat/link'
 import { describeError } from '@/lib/errors'
 import { n8nClient } from '@/lib/n8n/client'
