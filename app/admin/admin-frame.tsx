@@ -9,6 +9,7 @@ import {
   Mail,
   Plug,
   SlidersHorizontal,
+  TriangleAlert,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -16,6 +17,7 @@ import { ConsoleLoading, ConsoleShell } from '@/components/console/console-shell
 import { btnClass } from '@/components/console/ui'
 import { adminPath, type AdminSection } from '@/lib/admin/routes'
 import { publicChatPath } from '@/lib/chat/link'
+import { describeError } from '@/lib/errors'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -78,6 +80,43 @@ export function AdminTabs({
   )
 }
 
+/**
+ * Shown when the workspace lookup itself failed.
+ *
+ * States the cause rather than redirecting, because every realistic reason —
+ * an unapplied migration, a dropped connection, a broken RLS policy — is
+ * something the owner can only act on if they can see it.
+ */
+function AdminLoadFailure({ message }: Readonly<{ message: string }>) {
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-canvas px-4">
+      <div className="w-full max-w-md rounded-xl border border-alert/20 bg-surface p-6 shadow-elevated">
+        <div className="flex items-center gap-2">
+          <TriangleAlert className="h-4 w-4 shrink-0 text-alert" />
+          <h2 className="text-sm font-semibold text-ink-900">
+            Could not load this workspace
+          </h2>
+        </div>
+
+        <p className="mt-3 text-xs leading-relaxed text-ink-500">
+          The workspace query failed. If this followed a deploy, a database
+          migration in <code className="font-mono text-ink-700">scripts/</code> is
+          probably not applied yet.
+        </p>
+
+        <pre className="mt-3 overflow-x-auto rounded-lg border border-border bg-ink-50 p-3 font-mono text-[11px] wrap-break-word whitespace-pre-wrap text-ink-600">
+          {message}
+        </pre>
+
+        <Link href="/" className={cn(btnClass('outline', 'md'), 'mt-4')}>
+          <ArrowLeft className="h-4 w-4" />
+          Back to workspaces
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 function AdminFrameInner({
   section,
   badge,
@@ -95,6 +134,7 @@ function AdminFrameInner({
   const supabase = useMemo(() => createClient(), [])
 
   const [company, setCompany] = useState<AdminCompany | null>(null)
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -106,11 +146,21 @@ function AdminFrameInner({
       // RLS answers the ownership question: a workspace this session does not
       // own comes back empty, which is the same outcome as one that does not
       // exist — and the same redirect.
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('companies')
         .select('id, name, api_key, display_timezone')
         .eq('id', companyId)
         .maybeSingle<AdminCompany>()
+
+      // A failed *query* is not a missing workspace, and must not be reported
+      // as one. Bouncing to Workspaces on a PostgREST 400 — an unapplied
+      // migration, say — hides the only useful information there is and sends
+      // the owner looking in entirely the wrong place.
+      if (error) {
+        console.error('Error loading workspace:', describeError(error))
+        setLoadError(describeError(error))
+        return
+      }
 
       if (!data) {
         router.push('/')
@@ -123,6 +173,7 @@ function AdminFrameInner({
     load()
   }, [companyId, router, supabase])
 
+  if (loadError) return <AdminLoadFailure message={loadError} />
   if (!company) return <ConsoleLoading label={loadingLabel} />
 
   return (
