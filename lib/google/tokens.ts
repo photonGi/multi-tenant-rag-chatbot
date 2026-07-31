@@ -145,12 +145,18 @@ export async function decryptToken(envelope: string | null | undefined): Promise
   }
 }
 
-/** True when the environment is set up well enough to store a connection. */
-export function tokenEncryptionConfigured(): boolean {
+/**
+ * null when the environment can encrypt; otherwise why it cannot.
+ *
+ * Returns the reason rather than a boolean because "missing" and "present but
+ * malformed" are the same failure to a caller and completely different failures
+ * to whoever has to fix it — and the person reading the log is the second one.
+ */
+export function tokenEncryptionProblem(): string | null {
   try {
     keyMaterial()
-    return true
-  } catch {
-    return false
+    return null
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
   }
 }

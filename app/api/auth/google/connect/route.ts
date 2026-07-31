@@ -5,7 +5,7 @@ import { describeError } from '@/lib/errors'
 import { integrationsResultPath } from '@/lib/admin/routes'
 import { GoogleConfigError, buildConsentUrl, googleOAuthConfig } from '@/lib/google/oauth'
 import { signOAuthState } from '@/lib/google/state'
-import { tokenEncryptionConfigured } from '@/lib/google/tokens'
+import { tokenEncryptionProblem } from '@/lib/google/tokens'
 
 /**
  * Step one of connecting a workspace's Google account: send the owner to
@@ -42,9 +42,10 @@ export async function GET(request: NextRequest) {
   // through a Google consent screen and only then discovering we cannot store
   // what they granted is a worse experience than saying so up front — and it
   // would leave a live grant on their account that nothing here can use.
-  if (!tokenEncryptionConfigured()) {
+  const encryptionProblem = tokenEncryptionProblem()
+  if (encryptionProblem) {
     console.error(
-      '[google] TOKEN_ENCRYPTION_KEY is missing — refusing to start a consent flow that could not be stored.',
+      `[google] refusing to start a consent flow that could not be stored: ${encryptionProblem}`,
     )
     return NextResponse.redirect(
       `${origin}${integrationsResultPath(workspaceId, 'error', 'config')}`,
