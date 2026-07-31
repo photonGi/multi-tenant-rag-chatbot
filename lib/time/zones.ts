@@ -181,6 +181,57 @@ export function listTimeZones(): ZoneOption[] {
     .sort((a, b) => a.offsetMinutes - b.offsetMinutes || a.zone.localeCompare(b.zone))
 }
 
+/**
+ * Lowercase, with the separators people do not type turned into spaces, so
+ * 'America/New_York' can be found by typing 'new york'.
+ */
+function searchable(value: string): string {
+  return value.toLowerCase().replaceAll('_', ' ').replaceAll('/', ' ').trim()
+}
+
+/**
+ * Filters and ranks zones for the picker.
+ *
+ * Ranking matters more than filtering here. 417 zones contain 'a', so a plain
+ * `includes` puts 'Africa/Abidjan' above 'Asia/Kolkata' for someone typing
+ * 'as' — the city is what a person is actually looking for, so a city that
+ * starts with the query outranks a region that merely contains it.
+ *
+ * The offset is searchable too: '+05:30' and '5:30' both find India, which is
+ * how someone who knows the offset but not the city name will look.
+ */
+export function searchZones(options: ZoneOption[], query: string): ZoneOption[] {
+  const needle = searchable(query)
+  if (!needle) return options
+
+  const ranked: { option: ZoneOption; score: number; index: number }[] = []
+
+  options.forEach((option, index) => {
+    const haystack = searchable(option.zone)
+    const city = searchable(option.zone.split('/').pop() ?? option.zone)
+    const offset = option.offsetLabel.toLowerCase()
+
+    let score: number
+    if (city.startsWith(needle)) score = 0
+    else if (haystack.split(' ').some((word) => word.startsWith(needle))) score = 1
+    else if (haystack.includes(needle)) score = 2
+    else if (offset.includes(needle)) score = 3
+    else return
+
+    ranked.push({ option, score, index })
+  })
+
+  // Ties keep the incoming order, which is sorted by offset — so equally good
+  // matches still read west-to-east rather than shuffling on every keystroke.
+  // `sort` rather than `toSorted`: `ranked` was built two lines up and is not
+  // shared, so there is nothing to protect from mutation — and this module is
+  // deliberately portable (see the header), which `toSorted` would cost by
+  // raising the floor to ES2023 for no benefit.
+  ranked.sort((a, b) => a.score - b.score || a.index - b.index)
+
+  return ranked.map((entry) => entry.option)
+}
+
 /** 'Sat, 1 Aug 2026' and '10:30 PM', both in the given zone. */
 export function formatInZone(
   value: string | null | undefined,

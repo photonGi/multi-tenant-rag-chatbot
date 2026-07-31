@@ -12,7 +12,8 @@ import {
   listTimeZones,
   resolveDisplayZone,
 } from '@/lib/time/zones'
-import { cn } from '@/lib/utils'
+
+import { TimeZoneSelect } from './timezone-select'
 
 /**
  * Which zone the console renders meeting times in.
@@ -27,10 +28,6 @@ import { cn } from '@/lib/utils'
  * immediately visible effect, and the console treats those optimistically
  * elsewhere too.
  */
-
-/** Matches TextInput, plus room for the native chevron. */
-const selectClass =
-  'h-11 w-full appearance-none rounded-lg border border-border bg-surface px-3.5 pr-9 text-base font-light text-ink-900 shadow-soft transition-all outline-none sm:h-10 sm:text-sm focus:border-ink-300 focus:ring-1 focus:ring-ink-200 disabled:cursor-not-allowed disabled:bg-ink-50 disabled:opacity-60'
 
 export function TimeZoneSetting({
   companyId,
@@ -63,11 +60,9 @@ export function TimeZoneSetting({
     return () => clearInterval(timer)
   }, [])
 
-  const handleChange = async (next: string) => {
-    // The empty option is the "follow this browser" default, stored as null so
-    // it keeps following a viewer who later moves.
-    const zone = next === '' ? null : next
-
+  // null is the "follow this browser" default, stored as null rather than a
+  // resolved zone so it keeps following a viewer who later moves.
+  const handleChange = async (zone: string | null) => {
     setSaving(true)
     setError('')
 
@@ -114,33 +109,20 @@ export function TimeZoneSetting({
 
       <div>
         <Label htmlFor="display-timezone">Display Meetings In</Label>
-        <div className="relative">
-          <select
-            id="display-timezone"
-            value={value ?? ''}
-            disabled={saving}
-            onChange={(event) => handleChange(event.target.value)}
-            className={selectClass}
-          >
-            <option value="">Follow this browser ({browser})</option>
-            {zones.map((option) => (
-              <option key={option.zone} value={option.zone}>
-                {option.zone}
-                {option.offsetLabel ? ` — ${option.offsetLabel}` : ''}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-ink-400">
-            ▾
-          </span>
-        </div>
+        <TimeZoneSelect
+          id="display-timezone"
+          value={value}
+          browser={browser}
+          options={zones}
+          disabled={saving}
+          onChange={handleChange}
+        />
+        <p className="mt-1.5 text-[11px] text-ink-400">
+          Search by city, region, or offset — “kolkata”, “europe”, “+05:30”.
+        </p>
       </div>
 
-      <div
-        className={cn(
-          'flex flex-col gap-1 rounded-lg border border-border bg-ink-50 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4',
-        )}
-      >
+      <div className="flex flex-col gap-1 rounded-lg border border-border bg-ink-50 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <span className="font-mono text-[10px] tracking-wider text-ink-400 uppercase">
           Current time here
         </span>
