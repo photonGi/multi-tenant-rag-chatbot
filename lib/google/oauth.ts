@@ -37,8 +37,7 @@ export const GOOGLE_SCOPES = [
   'email',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/calendar.freebusy',
-  'https://www.googleapis.com/auth/gmail.send',
-  "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+  'https://www.googleapis.com/auth/gmail.send'
 ] as const
 
 export interface GoogleOAuthConfig {
