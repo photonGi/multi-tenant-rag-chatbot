@@ -649,7 +649,7 @@ INSERT INTO meetings (
 |---|---|
 | `memory_key` | Pass through the same `<visitor>:<thread>` value the chat request carried, so a booking can be traced to the conversation that produced it. |
 | `starts_at` / `ends_at` | `timestamptz` — send an ISO 8601 string **with an offset**. A naive local time will be read as UTC. |
-| `timezone` | The IANA name (`Europe/London`), not an offset. The console renders the meeting in this zone, because that is the time the confirmation quoted, and an offset alone cannot survive a DST boundary. |
+| `timezone` | The IANA name (`Europe/London`), not an offset — a record of the zone the booking was made in. Send the current name (`Asia/Kolkata`, not `IST` or `Asia/Calcutta`); the console no longer renders rows in this zone, but a mix of aliases here makes the column useless for anything later. It is `starts_at` that has to be right. |
 | `is_online` | `false` for in-person; leave `meet_link` null. |
 | `calendar_event_id` | Google's event id, so a later reschedule can find the event. |
 | `status` | **CHECK constraint:** `booked`, `cancelled`, or `completed`. Anything else is rejected by the database rather than silently stored. |
@@ -668,7 +668,8 @@ On the app side, in the environment (see `.env.example`):
 (`<NEXT_PUBLIC_APP_URL>/api/auth/google/callback`) is not what the Google Cloud
 console has.
 
-Also run `scripts/meetings-schema.sql`, and note that `calendar.events` and
+Also run `scripts/meetings-schema.sql` and `scripts/display-timezone.sql`, and
+note that `calendar.events` and
 `gmail.send` are both sensitive scopes — Google has to verify the OAuth consent
 screen before anyone outside the test-user list can connect.
 

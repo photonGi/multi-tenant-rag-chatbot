@@ -169,7 +169,8 @@ app never creates a calendar event or sends a message.
 |---|---|
 | Read-only by design | These rows describe events that exist in Google. Editing one here would change the app's record without changing the meeting the lead was invited to. The calendar is the system of record. |
 | Traceable to a conversation | `memory_key` is the same `<visitor>:<thread>` value the chat workflow scopes its memory to, so a booking can be tied back to the exchange that produced it. |
-| Shown in the lead's own zone | An offset alone cannot survive a daylight-saving boundary, so the IANA zone is stored alongside the instant — and the list renders the time the confirmation email actually quoted. |
+| One zone for the whole list | Set in Admin → Overview, defaulting to the viewer's browser. `meetings.timezone` records whatever the booking workflow sent — `Asia/Kolkata` on one row, the legacy alias `IST` on the next, null on the one after — and ICU accepts most of it, so rendering each row in its own recorded zone produced a list where no two rows were comparable and none were in the reader's zone. `starts_at` is a `timestamptz` and already names the exact moment, so the zone is purely a rendering choice and the owner's is the useful one. |
+| The picker offers current names | `Intl.supportedValuesOf` returns ICU's canonical list, which keeps the *older* half of a renamed pair — so it offers `Asia/Calcutta`, never `Asia/Kolkata`, and `UTC` not at all. Both names format identically, so the modern one is substituted for the handful of renames someone would notice missing. |
 | Online and in-person | A Meet link when there is one, and no dangling "Join here" when there is not. |
 
 ### Server-to-server token endpoint
@@ -211,7 +212,7 @@ here.
 | Workspaces | List, create, and open. Each shows its own key and index. |
 | Documents | Add context, browse indexed sources filtered by kind, delete. |
 | Websites | Add sites, copy install snippets, approve origins, edit themes, enable/disable, delete. |
-| Admin | Four tabs behind one rail destination — **Overview** (index health, share link, key reveal/copy/rotate, workspace record, delete), **Integrations**, **Email Templates**, **Meetings**. They are tabs and not four more rail icons because eight entries in a 64px column, or in a phone's bottom bar, stops being scannable. |
+| Admin | Four tabs behind one rail destination — **Overview** (index health, share link, key reveal/copy/rotate, display time zone, workspace record, delete), **Integrations**, **Email Templates**, **Meetings**. They are tabs and not four more rail icons because eight entries in a 64px column, or in a phone's bottom bar, stops being scannable. |
 | Responsive shell | A 64px icon rail on desktop; below `md` it becomes a bottom bar, because a fixed rail costs a sixth of a phone's width. |
 | Live polling | The Websites page re-checks every 6s while any install is pending, then stops. |
 | Optimistic updates | Toggles apply immediately rather than waiting on a round trip. |

@@ -42,6 +42,10 @@ CREATE TABLE public.companies (
   name text NOT NULL,
   api_key text UNIQUE NOT NULL,
   owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- IANA zone the console renders meeting times in. NULL follows the viewer's
+  -- browser. Display only — see scripts/display-timezone.sql, which adds this
+  -- to databases created before the column existed.
+  display_timezone text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

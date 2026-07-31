@@ -36,6 +36,8 @@ export interface AdminCompany {
   id: string
   name: string
   api_key: string
+  /** null follows the viewer's browser. See lib/time/zones.ts. */
+  display_timezone: string | null
 }
 
 const TABS: { id: AdminSection; label: string; icon: LucideIcon }[] = [
@@ -106,7 +108,7 @@ function AdminFrameInner({
       // exist — and the same redirect.
       const { data } = await supabase
         .from('companies')
-        .select('id, name, api_key')
+        .select('id, name, api_key, display_timezone')
         .eq('id', companyId)
         .maybeSingle<AdminCompany>()
 

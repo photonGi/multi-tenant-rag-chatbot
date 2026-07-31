@@ -26,6 +26,7 @@ import {
   SectionTitle,
 } from '@/components/console/ui'
 import { AdminTabs } from './admin-frame'
+import { TimeZoneSetting } from './timezone-setting'
 import { publicChatPath, publicChatUrl } from '@/lib/chat/link'
 import { createClient } from '@/lib/supabase/client'
 import { describeError } from '@/lib/errors'
@@ -35,6 +36,7 @@ interface Company {
   id: string
   name: string
   api_key: string
+  display_timezone: string | null
   created_at: string
   updated_at: string
 }
@@ -304,6 +306,15 @@ function AdminPageContent() {
             </Btn>
           </div>
         </Panel>
+
+        {/* ── Display preferences ─────────────────────────────────────────── */}
+        <TimeZoneSetting
+          companyId={company.id}
+          value={company.display_timezone}
+          onSaved={(display_timezone) =>
+            setCompany((current) => (current ? { ...current, display_timezone } : current))
+          }
+        />
 
         {/* ── Workspace record ────────────────────────────────────────────── */}
         <Panel className="p-5 sm:p-6">

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarClock, MapPin, RefreshCw, Video } from 'lucide-react'
+import Link from 'next/link'
+import { CalendarClock, Globe, MapPin, RefreshCw, Video } from 'lucide-react'
 
 import {
   Alert,
@@ -13,8 +14,10 @@ import {
   SectionTitle,
 } from '@/components/console/ui'
 import { AdminFrame, AdminTabs, type AdminCompany } from '@/app/admin/admin-frame'
+import { adminPath } from '@/lib/admin/routes'
 import { describeError } from '@/lib/errors'
 import { createClient } from '@/lib/supabase/client'
+import { formatInZone, resolveDisplayZone, zoneAbbreviation } from '@/lib/time/zones'
 
 /**
  * What the assistant has booked. Read-only, deliberately.
@@ -49,53 +52,29 @@ const STATUS_TONE = {
 } as const
 
 /**
- * Renders the instant in the meeting's own zone rather than the viewer's.
+ * Renders the instant in the workspace's chosen display zone — one zone for
+ * every row, set in Admin → Overview.
  *
- * "3:00 PM" means nothing without saying whose afternoon it is, and an owner
- * looking at a booking made by a lead in another country needs the lead's
- * time — that is the one the confirmation email quoted.
+ * It deliberately ignores `meetings.timezone`. That column records whatever the
+ * booking workflow sent, which in practice varies row to row ('Asia/Kolkata',
+ * the legacy alias 'IST', null), and ICU accepts most of it — so echoing it back
+ * produced a list where no two rows were in the same zone and none were in the
+ * reader's. `starts_at` is a timestamptz and already names the exact moment, so
+ * the zone is purely a rendering choice, and the owner's is the useful one.
  */
-function formatWhen(meeting: Meeting): { date: string; time: string } {
-  if (!meeting.starts_at) return { date: '—', time: '' }
+function formatWhen(
+  meeting: Meeting,
+  zone: string,
+): { date: string; time: string } {
+  const starts = formatInZone(meeting.starts_at, zone)
+  if (!starts) return { date: '—', time: '' }
 
-  const starts = new Date(meeting.starts_at)
-  if (Number.isNaN(starts.getTime())) return { date: '—', time: '' }
+  const ends = formatInZone(meeting.ends_at, zone)
 
-  // An unrecognised zone name would otherwise throw and take the page with it.
-  let zone: string | undefined = meeting.timezone ?? undefined
-  try {
-    if (zone) new Intl.DateTimeFormat('en-GB', { timeZone: zone }).format(starts)
-  } catch {
-    zone = undefined
+  return {
+    date: starts.date,
+    time: ends ? `${starts.time} – ${ends.time}` : starts.time,
   }
-
-  const date = starts.toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: zone,
-  })
-
-  const start = starts.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: zone,
-  })
-
-  const ends = meeting.ends_at ? new Date(meeting.ends_at) : null
-  const end =
-    ends && !Number.isNaN(ends.getTime())
-      ? ends.toLocaleTimeString(undefined, {
-          hour: '2-digit',
-          minute: '2-digit',
-          timeZone: zone,
-        })
-      : null
-
-  const suffix = zone ? ` ${zone}` : ''
-
-  return { date, time: end ? `${start} – ${end}${suffix}` : `${start}${suffix}` }
 }
 
 function MeetingsList({ company }: { company: AdminCompany }) {
@@ -141,6 +120,8 @@ function MeetingsList({ company }: { company: AdminCompany }) {
     }
   }, [company.id, reloadToken, supabase])
 
+  const zone = resolveDisplayZone(company.display_timezone)
+
   const upcoming = meetings.filter(
     (meeting) =>
       meeting.status === 'booked' &&
@@ -154,6 +135,23 @@ function MeetingsList({ company }: { company: AdminCompany }) {
         title="Meetings"
         subtitle="Bookings the assistant has made for this workspace."
       >
+        {/* The zone every row below is rendered in, stated rather than assumed —
+            and a route to changing it, since the setting lives on another tab. */}
+        <Link
+          href={adminPath('overview', company.id)}
+          // `title`, not the rail's data-tooltip: that one renders to the right
+          // of its anchor, and this sits at the right edge of the header where
+          // it would be clipped.
+          //
+          // The abbreviation fits a pill where 'Asia/Kolkata' does not, but it
+          // is often only an offset — so the full zone id is one hover away
+          // rather than absent.
+          title={`${zone} — change in Overview`}
+          className="flex items-center gap-1.5 rounded border border-ink-200 bg-ink-100 px-1.5 py-0.5 font-mono text-[10px] leading-none text-ink-500 transition-colors hover:border-ink-300 hover:text-ink-900"
+        >
+          <Globe className="h-3 w-3" />
+          {zoneAbbreviation(zone)}
+        </Link>
         <Btn
           variant="outline"
           onClick={() => {
@@ -199,7 +197,7 @@ function MeetingsList({ company }: { company: AdminCompany }) {
       ) : (
         <Panel className="divide-y divide-border/60 overflow-hidden">
           {meetings.map((meeting) => {
-            const when = formatWhen(meeting)
+            const when = formatWhen(meeting, zone)
 
             return (
               <div
