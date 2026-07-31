@@ -507,6 +507,173 @@ a second lookup.
 
 ---
 
+## Meeting Booking (n8n → this app)
+
+Everything above is n8n receiving a call. This section is the other direction:
+the booking workflow calls **into** this app to get a Google access token, then
+writes its result back to Supabase.
+
+The split is deliberate. The tenant's Google refresh token is a standing grant
+over their calendar and their outbound mail, and it is encrypted with a key this
+app holds. Copying it into an n8n credential store would put a per-tenant
+credential somewhere with no revocation path and no audit trail — so the
+workflow asks for a short-lived access token instead and never sees anything
+longer-lived.
+
+### 1. Get an access token
+
+**URL:** `GET https://<your-app>/api/internal/google/token?company_id=<uuid>`
+
+**Required header:**
+```
+X-Internal-Secret: <INTERNAL_API_SECRET>
+```
+
+This is the *only* authentication on the route — there is no session on a
+server-to-server call. It is the mirror image of the `X-Widget-Secret` this app
+sends you. If `INTERNAL_API_SECRET` is unset on the deployment, every request is
+refused rather than let through, so an unconfigured environment fails closed.
+
+**200 — connected:**
+```json
+{
+  "connected": true,
+  "access_token": "ya29.…",
+  "calendar_id": "primary",
+  "connected_email": "owner@acme.com"
+}
+```
+
+**404 — no usable connection.** The workspace never connected Google, or the
+grant has been revoked. Nothing to retry; this is the branch that should tell
+the visitor booking is unavailable.
+```json
+{ "connected": false }
+```
+
+**Other statuses:**
+
+| Status | Body | Meaning |
+|---|---|---|
+| `400` | `{"error":"invalid_request"}` | Missing or malformed `company_id`. |
+| `401` | `{"error":"unauthorized"}` | Wrong secret, or none sent. |
+| `502` | `{"connected":false,"error":"refresh_failed"}` | A connection exists but Google would not renew it right now. Worth retrying — unlike the 404. |
+| `500` | `{"connected":false,"error":"internal_error"}` | Unexpected. Logged in full on the app side. |
+
+Branch on `connected` rather than on the status code and both success and the
+"not set up" case read from one field.
+
+**Notes for the workflow:**
+
+- **Do not cache the token.** The app already refreshes it 120s ahead of expiry
+  and persists the result, so calling this per booking is cheap and always
+  fresh. Caching it in a workflow variable reintroduces the expiry problem the
+  endpoint exists to remove.
+- **Use it as a bearer token:** `Authorization: Bearer <access_token>` against
+  `https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events` and
+  `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`.
+- **Granted scopes are `calendar.events` and `gmail.send` only.** The token
+  cannot read the mailbox, list calendars, or delete one. If a call 403s, that
+  is why.
+- **`calendar_id` is authoritative** — use the returned value rather than
+  hardcoding `primary`, or a tenant who points bookings at a shared calendar
+  will have them land in the wrong place.
+- Ask for a Meet link with `conferenceData` plus `conferenceDataVersion=1` on
+  the insert; the created event returns `hangoutLink`, which is what belongs in
+  `meetings.meet_link`.
+
+**Resolving `company_id`:** the chat workflow is keyed on `api_key`, this
+endpoint on the workspace UUID.
+```sql
+SELECT id FROM companies WHERE api_key = $1 LIMIT 1
+```
+
+**Test:**
+```bash
+curl -i "https://<your-app>/api/internal/google/token?company_id=<uuid>" \
+  -H "X-Internal-Secret: <INTERNAL_API_SECRET>"
+```
+Expect `401` with the header removed, `400` with a malformed `company_id`, and
+`404 {"connected": false}` for a workspace that has not connected Google.
+
+---
+
+### 2. Read the confirmation template
+
+```sql
+SELECT subject, body_html
+FROM email_templates
+WHERE company_id = $1 AND template_key = 'meeting_confirmation'
+```
+
+Substitute `{{token}}` — with any inner whitespace, e.g. `{{ lead_name }}` — in
+**both** the subject and the body:
+
+| Variable | Value |
+|---|---|
+| `{{lead_name}}` | Lead's name |
+| `{{lead_email}}` | Lead's email |
+| `{{meeting_date}}` | Date, in the lead's timezone |
+| `{{meeting_time}}` | Time, in the lead's timezone |
+| `{{meet_link}}` | The event's `hangoutLink`; empty for in-person |
+| `{{company_name}}` | `companies.name` |
+
+Leave an unrecognised token exactly as written rather than replacing it with an
+empty string. The console warns the owner about tokens it does not recognise, and
+that warning is only useful if the sender agrees with it. `lib/email/templates.ts`
+is the authoritative list and the reference implementation of the substitution.
+
+Send the mail **from the connected mailbox** (`connected_email`) — sending from
+anywhere else is the thing this integration exists to avoid.
+
+A row always exists in practice: the app seeds the default at workspace creation
+and again on first visit to Admin → Email Templates. Falling back to a plain
+message if the query returns nothing is still worth doing.
+
+---
+
+### 3. Record the booking
+
+Insert with the **service-role key** — `meetings` has an RLS policy for the
+owner's own session only, and your workflow has no session.
+
+```sql
+INSERT INTO meetings (
+  company_id, memory_key, lead_name, lead_email,
+  starts_at, ends_at, timezone,
+  is_online, meet_link, calendar_event_id, status
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'booked')
+```
+
+| Column | Notes |
+|---|---|
+| `memory_key` | Pass through the same `<visitor>:<thread>` value the chat request carried, so a booking can be traced to the conversation that produced it. |
+| `starts_at` / `ends_at` | `timestamptz` — send an ISO 8601 string **with an offset**. A naive local time will be read as UTC. |
+| `timezone` | The IANA name (`Europe/London`), not an offset. The console renders the meeting in this zone, because that is the time the confirmation quoted, and an offset alone cannot survive a DST boundary. |
+| `is_online` | `false` for in-person; leave `meet_link` null. |
+| `calendar_event_id` | Google's event id, so a later reschedule can find the event. |
+| `status` | **CHECK constraint:** `booked`, `cancelled`, or `completed`. Anything else is rejected by the database rather than silently stored. |
+
+Cancelling later is an `UPDATE … SET status = 'cancelled'`, not a delete — the
+console shows cancellations, and a deleted row just looks like a booking that
+never happened.
+
+---
+
+### 4. Deployment checklist
+
+On the app side, in the environment (see `.env.example`):
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY`,
+`INTERNAL_API_SECRET`, and `GOOGLE_REDIRECT_URI` when the default
+(`<NEXT_PUBLIC_APP_URL>/api/auth/google/callback`) is not what the Google Cloud
+console has.
+
+Also run `scripts/meetings-schema.sql`, and note that `calendar.events` and
+`gmail.send` are both sensitive scopes — Google has to verify the OAuth consent
+screen before anyone outside the test-user list can connect.
+
+---
+
 ## Contact & Support
 
 For issues with the frontend ↔ n8n integration:

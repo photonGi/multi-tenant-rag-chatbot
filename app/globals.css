@@ -279,6 +279,65 @@
   animation: dotPulse 1.2s ease-in-out infinite;
 }
 
+/* -----------------------------------------------------------------------------
+   Email template editor.
+
+   Tailwind's preflight resets heading sizes and strips list markers, which is
+   correct everywhere in the console except inside an editor whose entire job is
+   to show what an email will look like — there, an <h2> that renders at body
+   size is actively misleading. These rules restore the element defaults for
+   that one subtree.
+
+   The preview pane needs none of this: it renders in a sandboxed iframe with
+   its own document, where preflight never reaches.
+   -------------------------------------------------------------------------- */
+.rich-body h1 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 0.6em 0;
+}
+.rich-body h2 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin: 0.6em 0;
+}
+.rich-body h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.6em 0;
+}
+.rich-body p {
+  margin: 0.8em 0;
+}
+.rich-body ul,
+.rich-body ol {
+  margin: 0.8em 0;
+  padding-left: 1.5em;
+  list-style: revert;
+}
+.rich-body a {
+  color: #18181b;
+  text-decoration: underline;
+}
+.rich-body strong,
+.rich-body b {
+  font-weight: 600;
+}
+.rich-body blockquote {
+  margin: 0.8em 0;
+  padding-left: 1em;
+  border-left: 3px solid #e4e4e7;
+  color: #52525b;
+}
+.rich-body img {
+  max-width: 100%;
+}
+/* Tenant HTML can carry a wide table or an unbroken URL; it must scroll inside
+   the editor rather than widening the console around it. */
+.rich-body {
+  overflow-wrap: anywhere;
+}
+
 /* Mobile bottom navigation clears the home indicator. */
 @utility pb-safe-bar {
   padding-bottom: env(safe-area-inset-bottom, 0px);

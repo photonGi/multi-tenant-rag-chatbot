@@ -18,6 +18,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Server-to-server calls from the n8n workflows. They carry a shared secret
+  // and no cookies, so a Supabase session refresh in front of them is a round
+  // trip that can only ever conclude "not signed in" — and one that would run
+  // on the hot path of every meeting booking.
+  if (pathname.startsWith('/api/internal/')) {
+    return NextResponse.next()
+  }
+
   return await updateSession(request)
 }
 

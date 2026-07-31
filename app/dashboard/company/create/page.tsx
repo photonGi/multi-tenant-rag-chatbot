@@ -18,6 +18,10 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { describeError } from '@/lib/errors'
 import { generateApiKey } from '@/lib/api-key'
+import {
+  DEFAULT_MEETING_CONFIRMATION,
+  MEETING_CONFIRMATION_KEY,
+} from '@/lib/email/templates'
 
 const PROVISIONING_STEPS = [
   'A workspace key is generated and stored against the workspace',
@@ -62,6 +66,23 @@ export default function CreateWorkspacePage() {
         .single()
 
       if (createError) throw createError
+
+      // Seed the confirmation email so the workspace has one before anyone
+      // opens Admin → Email Templates, and so the booking workflow always finds
+      // a row to render. Deliberately not fatal: a workspace that exists with
+      // no template is recoverable — the templates page seeds it on first visit
+      // — while failing the whole creation over it is not what the person in
+      // front of this form asked for.
+      const { error: templateError } = await supabase.from('email_templates').insert({
+        company_id: data.id,
+        template_key: MEETING_CONFIRMATION_KEY,
+        subject: DEFAULT_MEETING_CONFIRMATION.subject,
+        body_html: DEFAULT_MEETING_CONFIRMATION.body_html,
+      })
+
+      if (templateError) {
+        console.error('Error seeding email template:', describeError(templateError))
+      }
 
       router.push(`/?company_id=${data.id}`)
     } catch (err) {

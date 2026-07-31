@@ -4,7 +4,8 @@ Everything this project does today, grouped by the surface it lives on.
 
 Scope note: this documents what is **built and in the repository**. The
 retrieval and generation steps themselves run in n8n workflows outside this
-codebase — see [N8N_INTEGRATION.md](./N8N_INTEGRATION.md) for that contract.
+codebase — as does the meeting booking in §7 — see
+[N8N_INTEGRATION.md](./N8N_INTEGRATION.md) for both contracts.
 
 ---
 
@@ -128,7 +129,58 @@ Held server-side, so the snippet is pasted once and never touched again.
 | Live preview | A miniature panel and launcher render from the unsaved draft, marked **Unsaved** until written. It runs the same `derivePalette` the widget does, so the colours shown are the real arithmetic, not an approximation. |
 | Layout and copy | Left/right position, offsets, title, subtitle, opening message, launcher label, up to four starter questions, optional auto-open delay, branding toggle. |
 
-## 7. Security
+## 7. Meeting booking
+
+The assistant can put a meeting on the tenant's own calendar and confirm it by
+email from the tenant's own address — so the lead hears from a name they
+recognise rather than from an unfamiliar sender.
+
+⚠️ The booking itself happens in an n8n workflow. What lives here is everything
+around it: the connection, the credentials, the template, and the record. The
+app never creates a calendar event or sends a message.
+
+### Google connection
+
+| Feature | Detail |
+|---|---|
+| One account per workspace | `UNIQUE (company_id, provider)`, so reconnecting re-consents the same row instead of accumulating grants nobody is tracking. |
+| Two scopes, narrowly chosen | `calendar.events` creates the meeting but cannot delete a calendar; `gmail.send` sends the confirmation and cannot read a single message. `openid email` is the third, and buys no access — it is the only way to learn *which* mailbox consented, since `gmail.send` does not grant `users.getProfile`. |
+| Tokens encrypted at rest | AES-256-GCM in the app, key from the environment. A copy of the database is not a copy of the tenant's mailbox. GCM authenticates as well as encrypts, so a tampered row fails to decrypt rather than yielding a token pointed somewhere else. |
+| Ciphertext never reaches a browser | The two encrypted columns sit outside `authenticated`'s GRANT, so PostgREST refuses to return them even when RLS would allow the row. |
+| Signed OAuth `state` | HMAC over (workspace, user, nonce, expiry), and the callback additionally requires the same session that started the flow. A bare workspace id in `state` would let anyone bind *their* Google account to *someone else's* workspace. |
+| Refresh ahead of expiry | The token is renewed 120s before it lapses and the new one persisted, so a workflow never receives a credential that dies between creating the event and sending the mail. |
+| Honest failure states | `invalid_grant` — the account itself saying no — marks the connection revoked and clears the tokens. Anything else marks it `error`, because a transient failure is not a revocation. |
+| Disconnect means disconnect | Revokes the refresh token with Google (which invalidates every access token derived from it), then clears the ciphertext. A revoked row holding a live credential is a credential nobody is watching. |
+
+### Email template
+
+| Feature | Detail |
+|---|---|
+| Never blank | A default is seeded at workspace creation *and* lazily on first visit — the second is what covers workspaces that existed before this feature did. |
+| One list of variables | `{{lead_name}}`, `{{lead_email}}`, `{{meeting_date}}`, `{{meeting_time}}`, `{{meet_link}}`, `{{company_name}}`. The editor, the preview and the default all read `lib/email/templates.ts`, so there is no second list to drift. |
+| Unknown tokens survive | A misspelled `{{meting_time}}` is left exactly as written rather than replaced with nothing, and the editor warns about it. Silently deleting it would hide the mistake until a lead received a sentence with a hole in it. |
+| Visual and HTML modes | Both edit the same `body_html` string — the source view is authoritative and the visual view is a convenience over it, so switching modes cannot lose anything. |
+| Paste is plain text | A paste out of Word or a webmail thread otherwise drops kilobytes of `mso-` markup into a template that has to render in clients this app cannot test against. |
+| Live preview | Rendered against dummy data in a `sandbox=""` iframe. Isolation in the honest direction: Tailwind's preflight would repaint the template into something no mail client produces, and tenant-authored HTML has no business executing in an authenticated console. |
+
+### Meetings record
+
+| Feature | Detail |
+|---|---|
+| Read-only by design | These rows describe events that exist in Google. Editing one here would change the app's record without changing the meeting the lead was invited to. The calendar is the system of record. |
+| Traceable to a conversation | `memory_key` is the same `<visitor>:<thread>` value the chat workflow scopes its memory to, so a booking can be tied back to the exchange that produced it. |
+| Shown in the lead's own zone | An offset alone cannot survive a daylight-saving boundary, so the IANA zone is stored alongside the instant — and the list renders the time the confirmation email actually quoted. |
+| Online and in-person | A Meet link when there is one, and no dangling "Join here" when there is not. |
+
+### Server-to-server token endpoint
+
+`GET /api/internal/google/token?company_id=…`, authenticated by
+`X-Internal-Secret` and nothing else — there is no session on a call from a
+workflow. It hands back a checked-for-freshness access token, so the refresh
+token never leaves this app for a credential store with no revocation story.
+Unset secret means every request is refused; the endpoint fails closed.
+
+## 8. Security
 
 | Control | Detail |
 |---|---|
@@ -147,19 +199,24 @@ Held server-side, so the snippet is pasted once and never touched again.
 and obtain a session. This is inherent to any public credential and cannot be
 fixed cryptographically. Rate limits and per-site counters are the mitigation.
 
-## 8. Console
+The controls protecting the tenant's Google credentials — encryption at rest, a
+signed OAuth `state`, a session-bound callback, and an internal endpoint that
+fails closed when its secret is unset — are described in §7 rather than repeated
+here.
+
+## 9. Console
 
 | Feature | Detail |
 |---|---|
 | Workspaces | List, create, and open. Each shows its own key and index. |
 | Documents | Add context, browse indexed sources filtered by kind, delete. |
 | Websites | Add sites, copy install snippets, approve origins, edit themes, enable/disable, delete. |
-| Admin | Index health, share link, key reveal/copy/rotate, workspace record, delete. |
+| Admin | Four tabs behind one rail destination — **Overview** (index health, share link, key reveal/copy/rotate, workspace record, delete), **Integrations**, **Email Templates**, **Meetings**. They are tabs and not four more rail icons because eight entries in a 64px column, or in a phone's bottom bar, stops being scannable. |
 | Responsive shell | A 64px icon rail on desktop; below `md` it becomes a bottom bar, because a fixed rail costs a sixth of a phone's width. |
 | Live polling | The Websites page re-checks every 6s while any install is pending, then stops. |
 | Optimistic updates | Toggles apply immediately rather than waiting on a round trip. |
 
-## 9. Design system
+## 10. Design system
 
 Defined in [Design.md](./Design.md), implemented as Tailwind v4 theme tokens in
 `app/globals.css`.
@@ -173,7 +230,7 @@ Defined in [Design.md](./Design.md), implemented as Tailwind v4 theme tokens in
 - Motion with intent: a slight overshoot on message entry reads as "settling
   into place" rather than "appearing".
 
-## 10. Engineering practices
+## 11. Engineering practices
 
 | | |
 |---|---|
@@ -203,3 +260,14 @@ Honest gaps, so nobody goes looking:
   role model.
 - **CJS build of the npm package.** ESM-only, which is fine for Vite, Next and
   webpack 5 but breaks a bare `require()`.
+- **The booking step itself.** The app connects the account, holds the
+  credentials, stores the template and shows the result. Creating the calendar
+  event and sending the mail is the n8n workflow's job.
+- **Reminder and cancellation emails.** `email_templates.template_key` exists to
+  hold them, but `meeting_confirmation` is the only key the console writes.
+- **Rescheduling or cancelling from the console.** The Meetings list is
+  read-only; changes have to happen in the calendar.
+- **Choosing a calendar.** `oauth_connections.calendar_id` is stored and
+  honoured, but there is no UI to point it at anything other than `primary`.
+- **Providers other than Google.** `provider` is a column rather than an
+  assumption, so Microsoft is a new value — but only Google is implemented.

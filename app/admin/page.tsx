@@ -25,6 +25,7 @@ import {
   PageHeading,
   SectionTitle,
 } from '@/components/console/ui'
+import { AdminTabs } from './admin-frame'
 import { publicChatPath, publicChatUrl } from '@/lib/chat/link'
 import { createClient } from '@/lib/supabase/client'
 import { describeError } from '@/lib/errors'
@@ -195,6 +196,8 @@ function AdminPageContent() {
           title="Admin"
           subtitle="Key rotation, public access, and workspace lifecycle."
         />
+
+        <AdminTabs active="overview" companyId={company.id} />
 
         {error ? <Alert>{error}</Alert> : null}
 
