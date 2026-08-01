@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft,
   CalendarClock,
+  Clock,
   Mail,
   Plug,
   SlidersHorizontal,
@@ -22,14 +23,14 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 /**
- * Admin is one rail destination with four pages behind it.
+ * Admin is one rail destination with five pages behind it.
  *
- * They did not become four rail icons: the rail is the top-level switcher, and
- * eight entries in a 64px column — or eight in a phone's bottom bar — is how
- * that stops being scannable. Workspace-level settings that are visited rarely
+ * They did not become five rail icons: the rail is the top-level switcher, and
+ * nine entries in a 64px column — or nine in a phone's bottom bar — is how that
+ * stops being scannable. Workspace-level settings that are visited rarely
  * belong one level down, so they are tabs inside Admin instead.
  *
- * This frame carries what all four pages need identically — the workspace
+ * This frame carries what all five pages need identically — the workspace
  * lookup, the redirect when there is no workspace to show, the shell and the
  * tab strip — so each page is only its own content.
  */
@@ -42,9 +43,12 @@ export interface AdminCompany {
   display_timezone: string | null
 }
 
+// Roughly the order a workspace is set up in: connect the account, say when you
+// are free, write what the lead receives, then watch what comes in.
 const TABS: { id: AdminSection; label: string; icon: LucideIcon }[] = [
   { id: 'overview', label: 'Overview', icon: SlidersHorizontal },
   { id: 'integrations', label: 'Integrations', icon: Plug },
+  { id: 'availability', label: 'Availability', icon: Clock },
   { id: 'templates', label: 'Email Templates', icon: Mail },
   { id: 'meetings', label: 'Meetings', icon: CalendarClock },
 ]

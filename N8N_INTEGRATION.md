@@ -598,7 +598,58 @@ Expect `401` with the header removed, `400` with a malformed `company_id`, and
 
 ---
 
-### 2. Read the confirmation template
+### 2. Read the availability
+
+```sql
+SELECT timezone, weekly_hours, slot_minutes, buffer_minutes, minimum_notice_minutes
+FROM availability_schedules
+WHERE company_id = $1
+```
+
+```json
+{
+  "timezone": "Asia/Kolkata",
+  "weekly_hours": {
+    "mon": [{ "start": "09:00", "end": "12:30" }, { "start": "13:30", "end": "17:00" }],
+    "tue": [{ "start": "09:00", "end": "17:00" }],
+    "wed": [], "thu": [], "fri": [], "sat": [], "sun": []
+  },
+  "slot_minutes": 30,
+  "buffer_minutes": 0,
+  "minimum_notice_minutes": 120
+}
+```
+
+**The one thing to get right:** `start` and `end` are **wall-clock times in
+`timezone`**, not offsets and not instants. Build each candidate slot by
+combining a date with the wall-clock time *in that zone* — do not compute an
+offset once and add it to every date, because that breaks on both sides of a
+daylight-saving change. In n8n, Luxon is already available:
+
+```javascript
+DateTime.fromISO(`${date}T${start}`, { zone: schedule.timezone })
+```
+
+How to read the rest:
+
+| Field | Meaning |
+|---|---|
+| `weekly_hours` | Keys are always `mon`…`sun`, always present. An empty array is a day off. Several ranges in a day means a gap between them (a lunch break) — they never overlap and arrive sorted by start. |
+| `slot_minutes` | Cut each range into slots of this length, **each range independently**. Two adjacent 45-minute ranges do not combine into one 60-minute slot. |
+| `buffer_minutes` | Advance by `slot_minutes + buffer_minutes` after placing a slot, but do not require the buffer to fit before the range ends: a 60-minute range with a 30-minute meeting and a 15-minute buffer yields one slot, not zero. |
+| `minimum_notice_minutes` | Discard any slot starting sooner than this from now. |
+
+A row always exists in practice — the console seeds weekdays 09:00–17:00 on
+first visit — but treat a missing row as "no availability configured" rather
+than as "available at all times".
+
+**This is what may be *offered*, not what is free.** Whether a slot is actually
+open still has to be checked against the calendar, which is what the
+`calendar.freebusy` scope on the access token is for.
+
+---
+
+### 3. Read the confirmation template
 
 ```sql
 SELECT subject, body_html
@@ -632,7 +683,7 @@ message if the query returns nothing is still worth doing.
 
 ---
 
-### 3. Record the booking
+### 4. Record the booking
 
 Insert with the **service-role key** — `meetings` has an RLS policy for the
 owner's own session only, and your workflow has no session.
@@ -660,7 +711,7 @@ never happened.
 
 ---
 
-### 4. Deployment checklist
+### 5. Deployment checklist
 
 On the app side, in the environment (see `.env.example`):
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY`,
@@ -668,8 +719,8 @@ On the app side, in the environment (see `.env.example`):
 (`<NEXT_PUBLIC_APP_URL>/api/auth/google/callback`) is not what the Google Cloud
 console has.
 
-Also run `scripts/meetings-schema.sql` and `scripts/display-timezone.sql`, and
-note that `calendar.events` and
+Also run `scripts/meetings-schema.sql`, `scripts/display-timezone.sql` and
+`scripts/availability-schema.sql`, and note that `calendar.events` and
 `gmail.send` are both sensitive scopes — Google has to verify the OAuth consent
 screen before anyone outside the test-user list can connect.
 

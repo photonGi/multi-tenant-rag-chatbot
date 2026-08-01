@@ -10,11 +10,17 @@
  * exactly as it does on Documents and Websites.
  */
 
-export type AdminSection = 'overview' | 'integrations' | 'templates' | 'meetings'
+export type AdminSection =
+  | 'overview'
+  | 'integrations'
+  | 'availability'
+  | 'templates'
+  | 'meetings'
 
 const SECTION_PATHS: Record<AdminSection, string> = {
   overview: '/admin',
   integrations: '/admin/integrations',
+  availability: '/admin/availability',
   templates: '/admin/templates',
   meetings: '/admin/meetings',
 }

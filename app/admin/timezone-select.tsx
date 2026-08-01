@@ -29,6 +29,7 @@ export function TimeZoneSelect({
   browser,
   options,
   disabled,
+  allowBrowserDefault = true,
   onChange,
 }: Readonly<{
   id: string
@@ -37,6 +38,14 @@ export function TimeZoneSelect({
   browser: string
   options: ZoneOption[]
   disabled?: boolean
+  /**
+   * Whether "follow this browser" is on offer.
+   *
+   * False where the value has to name one definite zone — availability hours,
+   * where "09:00" must mean the same instant to a lead in another country as it
+   * does to whoever last opened this page.
+   */
+  allowBrowserDefault?: boolean
   onChange: (zone: string | null) => void
 }>) {
   const listId = useId()
@@ -57,6 +66,8 @@ export function TimeZoneSelect({
   /** The browser default is an option too, and must be findable by typing. */
   const matches = useMemo(() => {
     const zones = searchZones(options, query)
+    if (!allowBrowserDefault) return zones
+
     const needle = query.trim().toLowerCase()
     const showBrowser =
       !needle ||
@@ -66,7 +77,7 @@ export function TimeZoneSelect({
     return showBrowser
       ? [{ zone: FOLLOW_BROWSER, offsetLabel: '', offsetMinutes: 0 }, ...zones]
       : zones
-  }, [browserLabel, options, query])
+  }, [allowBrowserDefault, browserLabel, options, query])
 
   // Reset the cursor whenever the list changes underneath it, so Enter never
   // lands on whatever happened to be at that index a keystroke ago.

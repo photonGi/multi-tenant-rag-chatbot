@@ -37,13 +37,14 @@ interface Meeting {
   ends_at: string | null
   timezone: string | null
   is_online: boolean
+  purpose: string | null
   meet_link: string | null
   status: 'booked' | 'cancelled' | 'completed'
   created_at: string
 }
 
 const MEETING_COLUMNS =
-  'id, memory_key, lead_name, lead_email, starts_at, ends_at, timezone, is_online, meet_link, status, created_at'
+  'id, memory_key, lead_name, lead_email, starts_at, ends_at, timezone, is_online, meet_link, status, purpose, created_at'
 
 const STATUS_TONE = {
   booked: 'success',
@@ -211,6 +212,12 @@ function MeetingsList({ company }: { company: AdminCompany }) {
                   </div>
                   <div className="mt-0.5 truncate font-mono text-[11px] text-ink-500">
                     {meeting.lead_email ?? 'No email recorded'}
+                  </div>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-ink-900">
+                    {meeting.purpose?.trim() || 'No purpose recorded'}
                   </div>
                 </div>
 

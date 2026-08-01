@@ -144,13 +144,26 @@ app never creates a calendar event or sends a message.
 | Feature | Detail |
 |---|---|
 | One account per workspace | `UNIQUE (company_id, provider)`, so reconnecting re-consents the same row instead of accumulating grants nobody is tracking. |
-| Two scopes, narrowly chosen | `calendar.events` creates the meeting but cannot delete a calendar; `gmail.send` sends the confirmation and cannot read a single message. `openid email` is the third, and buys no access — it is the only way to learn *which* mailbox consented, since `gmail.send` does not grant `users.getProfile`. |
+| Narrow scopes | `calendar.events` creates the meeting but cannot delete a calendar; `calendar.freebusy` sees only whether a span is busy, never what the event is; `gmail.send` sends the confirmation and cannot read a single message. `openid email` buys no access at all — it is the only way to learn *which* mailbox consented, since `gmail.send` does not grant `users.getProfile`. |
 | Tokens encrypted at rest | AES-256-GCM in the app, key from the environment. A copy of the database is not a copy of the tenant's mailbox. GCM authenticates as well as encrypts, so a tampered row fails to decrypt rather than yielding a token pointed somewhere else. |
 | Ciphertext never reaches a browser | The two encrypted columns sit outside `authenticated`'s GRANT, so PostgREST refuses to return them even when RLS would allow the row. |
 | Signed OAuth `state` | HMAC over (workspace, user, nonce, expiry), and the callback additionally requires the same session that started the flow. A bare workspace id in `state` would let anyone bind *their* Google account to *someone else's* workspace. |
 | Refresh ahead of expiry | The token is renewed 120s before it lapses and the new one persisted, so a workflow never receives a credential that dies between creating the event and sending the mail. |
 | Honest failure states | `invalid_grant` — the account itself saying no — marks the connection revoked and clears the tokens. Anything else marks it `error`, because a transient failure is not a revocation. |
 | Disconnect means disconnect | Revokes the refresh token with Google (which invalidates every access token derived from it), then clears the ciphertext. A revoked row holding a live credential is a credential nobody is watching. |
+
+### Availability
+
+| Feature | Detail |
+|---|---|
+| Weekly hours | Open ranges per weekday, as wall-clock times. Several ranges in a day is how a lunch break is said — 09:00–12:30 and 13:30–17:00 — rather than one span with a hole in it. An empty day is a day off. |
+| Wall-clock, never offsets | "I work 9 to 5" has to stay true across a daylight-saving change. An offset resolved at save time silently moves every meeting by an hour twice a year. |
+| Its own time zone, never null | Separate from the display zone in Overview, and `NOT NULL` where that one is nullable. "Follow the viewer's browser" is a coherent answer to *how should this be shown to you* and an incoherent one to *what does 09:00 mean to a lead in Toronto*. Seeded from the display zone, independent afterwards. |
+| Slot rules | Meeting length, buffer kept clear after each booking, and minimum notice. The buffer is charged after a slot and not at the end of a range — a 60-minute window with a 30-minute meeting and a 15-minute buffer holds one meeting, not none. |
+| Validation that says what is wrong | Overlapping ranges, an end before its start, a half-typed time — each reported inline on the day it belongs to, and Save stays disabled until they are gone. Ranges that merely touch (17:00 then 17:00) are one block written as two, not a conflict. |
+| Reads back defensively | The column is jsonb, so it can hold whatever a hand-run statement or a future workflow puts there. Anything unrecognised is dropped on read rather than repaired, so the editor never renders — or re-saves — a shape it does not understand. |
+| Never blank | Seeded weekdays 9–5 on first visit, like the email template. A workspace with no schedule row would otherwise mean "no availability at all", which is not what "never opened this page" should mean. |
+| Copy a day across | One click to apply a day's hours to the whole week, which is the friction every schedule editor of this kind has. |
 
 ### Email template
 
@@ -212,7 +225,7 @@ here.
 | Workspaces | List, create, and open. Each shows its own key and index. |
 | Documents | Add context, browse indexed sources filtered by kind, delete. |
 | Websites | Add sites, copy install snippets, approve origins, edit themes, enable/disable, delete. |
-| Admin | Four tabs behind one rail destination — **Overview** (index health, share link, key reveal/copy/rotate, display time zone, workspace record, delete), **Integrations**, **Email Templates**, **Meetings**. They are tabs and not four more rail icons because eight entries in a 64px column, or in a phone's bottom bar, stops being scannable. |
+| Admin | Five tabs behind one rail destination — **Overview** (index health, share link, key reveal/copy/rotate, display time zone, workspace record, delete), **Integrations**, **Availability**, **Email Templates**, **Meetings**, in roughly the order a workspace is set up. They are tabs and not five more rail icons because nine entries in a 64px column, or in a phone's bottom bar, stops being scannable. |
 | Responsive shell | A 64px icon rail on desktop; below `md` it becomes a bottom bar, because a fixed rail costs a sixth of a phone's width. |
 | Live polling | The Websites page re-checks every 6s while any install is pending, then stops. |
 | Optimistic updates | Toggles apply immediately rather than waiting on a round trip. |
@@ -264,6 +277,13 @@ Honest gaps, so nobody goes looking:
 - **The booking step itself.** The app connects the account, holds the
   credentials, stores the template and shows the result. Creating the calendar
   event and sending the mail is the n8n workflow's job.
+- **Slot computation.** The console stores the hours and the rules; turning them
+  into "here are three times on Thursday" — and checking them against the
+  calendar's existing events — is the workflow's job.
+- **Date overrides.** No way to say "closed on the 25th" or "half day on
+  Friday the 3rd" without editing the weekly hours and putting them back.
+- **Overnight ranges.** A range must end after it starts, so hours crossing
+  midnight have to be written as two days.
 - **Reminder and cancellation emails.** `email_templates.template_key` exists to
   hold them, but `meeting_confirmation` is the only key the console writes.
 - **Rescheduling or cancelling from the console.** The Meetings list is
